@@ -21,17 +21,17 @@ Parameters:
 # Constants
 # ******************************************************************************
 
-SERVICE = 5.0 # SERVICE is the average service time; service rate = 1/SERVICE
-ARRIVAL = 5.0 # ARRIVAL is the average inter-arrival time; arrival rate = 1/ARRIVAL
+SERVICE = 9.0 # SERVICE is the average service time; service rate = 1/SERVICE
+ARRIVAL = 2.0 # ARRIVAL is the average inter-arrival time; arrival rate = 1/ARRIVAL
 LOAD=SERVICE/ARRIVAL # This relationship holds for M/M/1
 
 # QUEUE_LEN defines the maximum number of elements in the system
 # If None: unlimited queue
-QUEUE_LEN = None
+QUEUE_LEN = 10
 
 # N_SERVERS indicates the number of servers in the system
 # If None: unlimited n. of servers
-N_SERVERS = None
+N_SERVERS = 1
 
 ###### Check - the number of servers cannot be unlimited if QUEUE_LEN is finite
 if QUEUE_LEN is not None and N_SERVERS is None:
@@ -141,6 +141,7 @@ def arrival(time, FES, queue):
     # cumulate statistics
     data.arr += 1
     data.ut += users*(time-data.oldT)
+    data.avgBuffer += len(queue)*(time-data.oldT)
     data.oldT = time
 
     # sample the time until the next event
@@ -179,6 +180,8 @@ def departure(time, FES, queue):
     # cumulate statistics
     data.dep += 1
     data.ut += users*(time-data.oldT)
+    data.avgBuffer += len(queue)*(time-data.oldT)
+
     data.oldT = time
     
     if len(queue) > 0:
@@ -205,7 +208,7 @@ def departure(time, FES, queue):
         service_time = random.expovariate(1.0/SERVICE)
 
         new_served = queue[0]
-
+        #NOTE: why appending delaysList also here? Why not only in addClient()?
         data.waitingDelaysList.append(time-new_served.arrival_time)
         data.waitingDelaysList_no_zeros.append(time-new_served.arrival_time)
 
@@ -262,6 +265,8 @@ if len(MM_system)>0:
 print(f"Average waiting delay: ")
 print(f"> Considering clients which are not waiting: {np.average(data.waitingDelaysList)}")
 print(f"> Without considering clients which did not wait: {np.average(data.waitingDelaysList_no_zeros)}")
+
+print(f"\nAverage buffer occupancy: {data.avgBuffer/time}" )
 
 print("******************************************************************************")
 

@@ -23,7 +23,7 @@ class Measure:
         self.waitingDelaysList_no_zeros = []    # Without considering the ones that have been directy been served
 
         # TODO: AVERAGE BUFFER OCCUPANCY
-
+        self.avgBuffer = 0
         # TODO: Loss probability (n. lost/n. arrivals)
 
         # TODO: Busy time - time spent in non-idle state (for each server) - if many servers
