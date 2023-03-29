@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 
 """
 General program for sinluating a queuing system.
-
 Parameters:
 - SERVICE
 - ARRIVAL
@@ -32,7 +31,6 @@ def addClient(time, FES, queue, serv, queue_len, n_server, serv_t):
     """
     Decide whether the user can be added.
     Need to look at the QUEUE_LEN parameter.
-
     This method is called by the 'arrival' subroutine.
     """
     global users, data
@@ -151,7 +149,6 @@ def departure(time, FES, queue, serv_id, serv, n_server, arr_t, serv_t):
     Perform the operations needed at a departure (end of service).
     Specifically, this method updates the measurements and removes the served
     client from the system, then it possibly adds another client to the service.
-
     Input parameters:
     - time: current time, extracted from the event in the FES.
     - FES: (priority queue) future event set (for scheduling). Used to place 
@@ -277,7 +274,6 @@ if __name__ == "__main__":
         - serv_t: is the average service time; service rate = 1/SERVICE
         - arr_t: is the average inter-arrival time; arrival rate = 1/ARRIVAL
         - load=serv_t/arr_t: This relationship holds for M/M/1
-
         - queue_len: defines the maximum number of elements in the system
                  If None: unlimited queue
     SIMULATION OPTION:
@@ -353,5 +349,3 @@ if __name__ == "__main__":
         plt.xlabel("arrival time [s]")
         plt.grid()
         plt.show()
-
-
