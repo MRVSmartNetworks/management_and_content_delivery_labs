@@ -1,0 +1,76 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{fullpage}
+\usepackage{graphicx}
+\graphicspath{ {./images/} }  % Set default path for figures
+\counterwithin{figure}{section}
+\counterwithin{figure}{subsection}
+\usepackage{url}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{color,soul}
+\usepackage{amsfonts}
+\usepackage{wrapfig}
+\usepackage{multicol}
+\usepackage{fancyhdr} % Formats the header
+\usepackage{geometry} % Formats the paper size, orientation, and margins
+\linespread{1.25} % about 1.5 spacing in Word
+\setlength{\parindent}{0pt} % no paragraph indents
+\setlength{\parskip}{1em} % paragraphs separated by one line
+\usepackage{hyperref}
+\hypersetup{
+   colorlinks=true,
+   linkcolor=blue,
+   filecolor=magenta,
+   urlcolor=cyan,
+   pdftitle={Default pdf Title},
+   pdfpagemode=FullScreen
+}
+\usepackage{enumitem}
+\setlist[itemize]{noitemsep, topsep=0pt}
+\setlist[enumerate]{noitemsep, topsep=0pt}
+
+\usepackage[format=plain,
+            font=it]{caption} % Italicizes figure captions
+\usepackage[english]{babel}
+\usepackage{csquotes}
+\renewcommand{\headrulewidth}{0pt}
+\geometry{letterpaper, portrait, margin=1in}
+\setlength{\headheight}{14.49998pt}
+\newcommand\titleofdoc{Default Title} %%%%% Title
+\newcommand\GroupName{Default Author}
+\newcommand\CurrDate{Default Date}
+
+\begin{document}
+\begin{titlepage}
+\begin{center}
+    \vspace*{4cm}
+
+    \Huge{\titleofdoc\\}
+    \vspace{0.5cm}
+    \LARGE{Default Subtitle}
+
+    \vspace{3 cm}
+    \Large{\GroupName\\}
+
+    \vspace{7 cm}
+
+    \Large{\CurrDate}
+
+    \vspace{0.25 cm}
+    \Large{A.Y. Default Academic Year}
+
+    \vfill
+    \end{center}
+\end{titlepage}
+
+\setcounter{page}{2}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\thepage}
+\lhead{\GroupName; \titleofdoc}
+
+
+\end{document}
