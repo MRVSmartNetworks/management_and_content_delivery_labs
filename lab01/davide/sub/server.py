@@ -78,17 +78,24 @@ class Server(object):
     def chooseNextServer(self):
         """
         Update the attribute 'current', which chooses the next server to be used
+
+        NOTE: the program should already check for the possibility to add the client
         """
 
         if self.n_servers is not None:
+            # count_loop = 0          # Used to track the attempts to find a free servers
+
             if self.policy == "first_idle":
                 self.current = 0
                 while not self.idle[self.current]:
                     self.current += 1
+                    self.current = self.current % self.n_servers
             elif self.policy == "round_robin":
                 self.current += 1
+                self.current = self.current % self.n_servers
                 while not self.idle[self.current]:
                     self.current += 1
+                    self.current = self.current % self.n_servers
         else:
             # No need to keep counter if infinite n. of servers - leave it 0
             self.current = 0

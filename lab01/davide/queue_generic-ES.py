@@ -31,7 +31,7 @@ QUEUE_LEN = None
 
 # N_SERVERS indicates the number of servers in the system
 # If None: unlimited n. of servers
-N_SERVERS = None
+N_SERVERS = 1
 
 ###### Check - the number of servers cannot be unlimited if QUEUE_LEN is finite
 if QUEUE_LEN is not None and N_SERVERS is None:
@@ -186,6 +186,9 @@ def departure(time, serv_id, FES, queue, serv):
     if len(queue) > 0:
         # get the first element from the queue
         client = queue.pop(0)
+
+        # Make its server idle
+        serv.makeIdle(serv_id)
         
         # do whatever we need to do when clients go away
         
@@ -213,7 +216,7 @@ def departure(time, serv_id, FES, queue, serv):
 
         # Schedule when the service will end
         FES.put((time + service_time, ["departure", new_serv_id]))
-        serv.makeBusy(serv_id)
+        serv.makeBusy(new_serv_id)
         
 # ******************************************************************************
 # the "main" of the simulation
@@ -242,7 +245,7 @@ while time < SIM_TIME:
         arrival(time, FES, MM_system, servers)
 
     elif event_type[0] == "departure":
-        departure(time, event_type[0], FES, MM_system, servers)
+        departure(time, event_type[1], FES, MM_system, servers)
 
 # ******************************************************************************
 # Print output data ************************************************************
