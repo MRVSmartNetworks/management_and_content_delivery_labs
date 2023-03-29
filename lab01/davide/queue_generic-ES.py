@@ -52,7 +52,7 @@ MM_system=[]
 # ******************************************************************************
 # Additional methods:
 
-def addClient(time, FES, queue):
+def addClient(time, FES, queue, serv):
     """
     Decide whether the user can be added.
     Need to look at the QUEUE_LEN parameter.
@@ -77,11 +77,12 @@ def addClient(time, FES, queue):
             if N_SERVERS is None or users<=N_SERVERS:
                 
                 # sample the service time
-                service_time = random.expovariate(1.0/SERVICE)
+                service_time, serv_id = serv.evalServTime()
                 #service_time = 1 + random.uniform(0, SEVICE_TIME)
 
                 # schedule when the client will finish the server
-                FES.put((time + service_time, "departure"))
+                FES.put((time + service_time, ["departure", serv_id]))
+                serv.makeBusy(serv_id)
 
                 # Update the waiting time for the client which starts to be served straight away
                 # Get the client - not extracting:
@@ -104,11 +105,12 @@ def addClient(time, FES, queue):
         if N_SERVERS is None or users<=N_SERVERS:
             
             # sample the service time
-            service_time = random.expovariate(1.0/SERVICE)
+            service_time, serv_id = serv.evalServTime()
             #service_time = 1 + random.uniform(0, SEVICE_TIME)
 
             # schedule when the client will finish the server
-            FES.put((time + service_time, "departure"))
+            FES.put((time + service_time, ["departure", serv_id]))
+            serv.makeBusy(serv_id)
             
             # Update the waiting time for the client which starts to be served straight away
             # Get the client - not extracting:
@@ -116,7 +118,7 @@ def addClient(time, FES, queue):
             data.waitingDelaysList.append(time - cli.arrival_time)
 
 # arrivals *********************************************************************
-def arrival(time, FES, queue):
+def arrival(time, FES, queue, serv):
     """
     arrival
     ---
@@ -147,16 +149,16 @@ def arrival(time, FES, queue):
     inter_arrival = random.expovariate(lambd=1.0/ARRIVAL)
     
     # schedule the next arrival
-    FES.put((time + inter_arrival, "arrival"))
+    FES.put((time + inter_arrival, ["arrival"]))
 
     ################################
-    addClient(time, FES, queue)
+    addClient(time, FES, queue, serv)
     ################################
 
 # ******************************************************************************
 
 # departures *******************************************************************
-def departure(time, FES, queue):
+def departure(time, serv_id, FES, queue, serv):
     """
     departure
     ---
@@ -202,7 +204,7 @@ def departure(time, FES, queue):
 
     if can_add:
         # Sample the service time
-        service_time = random.expovariate(1.0/SERVICE)
+        service_time, new_serv_id = serv.evalServTime()
 
         new_served = queue[0]
 
@@ -210,7 +212,8 @@ def departure(time, FES, queue):
         data.waitingDelaysList_no_zeros.append(time-new_served.arrival_time)
 
         # Schedule when the service will end
-        FES.put((time + service_time, "departure"))
+        FES.put((time + service_time, ["departure", new_serv_id]))
+        serv.makeBusy(serv_id)
         
 # ******************************************************************************
 # the "main" of the simulation
@@ -226,17 +229,20 @@ time = 0
 FES = PriorityQueue()
 
 # Schedule the FIRST ARRIVAL at t=0
-FES.put((0, "arrival"))
+FES.put((0, ["arrival"]))
+
+# Create servers (class)
+servers = Server(N_SERVERS, SERVICE)
 
 # Simulate until the simulated time reaches a constant
 while time < SIM_TIME:
     (time, event_type) = FES.get()
 
-    if event_type == "arrival":
-        arrival(time, FES, MM_system)
+    if event_type[0] == "arrival":
+        arrival(time, FES, MM_system, servers)
 
-    elif event_type == "departure":
-        departure(time, FES, MM_system)
+    elif event_type[0] == "departure":
+        departure(time, event_type[0], FES, MM_system, servers)
 
 # ******************************************************************************
 # Print output data ************************************************************

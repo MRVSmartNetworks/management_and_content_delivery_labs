@@ -30,6 +30,7 @@ class Measure:
         # Idea: update server class, plus add new required parameter in this class (n_servers)
         # Question: how to deal with multiple servers? Which of the many is occupied?
         
+        
 
     def queuingDelayHist(self, mean_value=None):
         """
