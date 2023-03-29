@@ -31,7 +31,7 @@ QUEUE_LEN = None
 
 # N_SERVERS indicates the number of servers in the system
 # If None: unlimited n. of servers
-N_SERVERS = 1
+N_SERVERS = 2
 
 ###### Check - the number of servers cannot be unlimited if QUEUE_LEN is finite
 if QUEUE_LEN is not None and N_SERVERS is None:
@@ -83,11 +83,16 @@ def addClient(time, FES, queue, serv):
                 # schedule when the client will finish the server
                 FES.put((time + service_time, ["departure", serv_id]))
                 serv.makeBusy(serv_id)
+                
+                if N_SERVERS is not None:
+                    # Update the beginning of the service
+                    data.serv_busy[serv_id]['begin_last_service'] = time
 
                 # Update the waiting time for the client which starts to be served straight away
                 # Get the client - not extracting:
                 cli = queue[0]
                 data.waitingDelaysList.append(time - cli.arrival_time)
+
         else:
             data.countLosses += 1
     else:
@@ -111,6 +116,10 @@ def addClient(time, FES, queue, serv):
             # schedule when the client will finish the server
             FES.put((time + service_time, ["departure", serv_id]))
             serv.makeBusy(serv_id)
+
+            if N_SERVERS is not None:
+                # Update the beginning of the service
+                data.serv_busy[serv_id]['begin_last_service'] = time
             
             # Update the waiting time for the client which starts to be served straight away
             # Get the client - not extracting:
@@ -181,7 +190,6 @@ def departure(time, serv_id, FES, queue, serv):
     # cumulate statistics
     data.dep += 1
     data.ut += users*(time-data.oldT)
-    data.oldT = time
     
     if len(queue) > 0:
         # get the first element from the queue
@@ -189,6 +197,14 @@ def departure(time, serv_id, FES, queue, serv):
 
         # Make its server idle
         serv.makeIdle(serv_id)
+
+        if N_SERVERS is not None:
+            # Update cumulative server busy time
+            
+            # Add to the cumulative time the time difference between now (service end)
+            # and the beginning of the service
+            print(data.serv_busy[serv_id]['cumulative_time'])
+            data.serv_busy[serv_id]['cumulative_time'] += (time - data.serv_busy[serv_id]['begin_last_service'])
         
         # do whatever we need to do when clients go away
         
@@ -196,6 +212,9 @@ def departure(time, serv_id, FES, queue, serv):
         data.delaysList.append(time-client.arrival_time)
         users -= 1
     
+    # Update time
+    data.oldT = time
+
     can_add = False
 
     # See whether there are more clients in the line
@@ -205,6 +224,7 @@ def departure(time, serv_id, FES, queue, serv):
     elif users > 0:
         can_add = True
 
+    ########## SERVE ANOTHER CLIENT #############
     if can_add:
         # Sample the service time
         service_time, new_serv_id = serv.evalServTime()
@@ -217,13 +237,17 @@ def departure(time, serv_id, FES, queue, serv):
         # Schedule when the service will end
         FES.put((time + service_time, ["departure", new_serv_id]))
         serv.makeBusy(new_serv_id)
+
+        if N_SERVERS is not None:
+            # Update the beginning of the service
+            data.serv_busy[new_serv_id]['begin_last_service'] = time
         
 # ******************************************************************************
 # the "main" of the simulation
 # ******************************************************************************
 random.seed(42)
 
-data = Measure(0,0,0,0,0,0)
+data = Measure(0,0,0,0,0,0, N_SERVERS)
 
 # Simulation time 
 time = 0
@@ -252,7 +276,7 @@ while time < SIM_TIME:
 # ******************************************************************************
 
 print("******************************************************************************")
-print("MEASUREMENTS: \n\nNo. of users in the queue (at stop): ",users,"\nNo. of total arrivals =",
+print("MEASUREMENTS: \n\nTotal simulation time: ", SIM_TIME, "\nNo. of users in the queue (at stop): ",users,"\nNo. of total arrivals =",
       data.arr,"- No. of total departures =",data.dep)
 
 print("Load: ",SERVICE/ARRIVAL)
@@ -271,6 +295,12 @@ if len(MM_system)>0:
 print(f"Average waiting delay: ")
 print(f"> Considering clients which are not waiting: {np.average(data.waitingDelaysList)}")
 print(f"> Without considering clients which did not wait: {np.average(data.waitingDelaysList_no_zeros)}")
+
+print('\nBusy Time: ')
+
+if N_SERVERS is not None:
+    for i in range(N_SERVERS):
+        print(f"> Server {i} - cumulative service time: {data.serv_busy[i]['cumulative_time']}")
 
 print("******************************************************************************")
 

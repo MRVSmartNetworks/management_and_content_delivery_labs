@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 class Measure:
-    def __init__(self, Narr, Ndep, NAveraegUser, OldTimeEvent, AverageDelay, countLoss):
+    def __init__(self, Narr, Ndep, NAveraegUser, OldTimeEvent, AverageDelay, countLoss, n_servers):
         self.arr = Narr                         # Count arrivals
         self.dep = Ndep                         # Count departures (TRANSMITTED PACKETS)
         # Count average number of users in time - add to ut the number of clients times the time span it remained constant
@@ -29,7 +29,16 @@ class Measure:
         # TODO: Busy time - time spent in non-idle state (for each server) - if many servers
         # Idea: update server class, plus add new required parameter in this class (n_servers)
         # Question: how to deal with multiple servers? Which of the many is occupied?
-        
+        if n_servers is not None:
+            # The attribute 'serv_busy' is a list with as many elements as the n. of servers
+            # It contains the cumulative service time for each server and the beginning of 
+            # the last service.
+
+            self.serv_busy = [{'cumulative_time': 0, 'begin_last_service': 0} for i in range(n_servers)]
+        else:
+            # Unlimited n. of servers       ! complicated
+            pass
+
         
 
     def queuingDelayHist(self, mean_value=None):
@@ -56,3 +65,7 @@ class Measure:
         plt.title("Values of the queuing delay in time")
         plt.grid()
         plt.show()
+
+    def plotServUtilDelay(self, sim_time):
+        # Divide the time by the total simulation time
+        pass
