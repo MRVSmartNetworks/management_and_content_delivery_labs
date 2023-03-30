@@ -21,31 +21,14 @@ Parameters:
 # ******************************************************************************
 # Constants
 # ******************************************************************************
-
-SERVICE = 3.0 # SERVICE is the average service time; service rate = 1/SERVICE
-ARRIVAL = range(1, 10) # ARRIVAL is the average inter-arrival time; arrival rate = 1/ARRIVAL
-#LOAD=SERVICE/ARRIVAL # This relationship holds for M/M/1
-
-# QUEUE_LEN defines the maximum number of elements in the system
-# If None: unlimited queue
-QUEUE_LEN = 10
-
-# N_SERVERS indicates the number of servers in the system
-# If None: unlimited n. of servers
-N_SERVERS = 1 
-
-
-
 TYPE1 = 1 
 
 SIM_TIME = 500000
 
-arrivals=0
-
 # ******************************************************************************
 # Additional methods:
 
-def addClient(time, FES, queue, n_server, serv_t):
+def addClient(time, FES, queue, serv, queue_len, n_server, serv_t):
     """
     Decide whether the user can be added.
     Need to look at the QUEUE_LEN parameter.
@@ -54,9 +37,9 @@ def addClient(time, FES, queue, n_server, serv_t):
     """
     global users, data
 
-    if QUEUE_LEN is not None:
+    if queue_len is not None:
         # Limited length
-        if users < QUEUE_LEN:
+        if users < queue_len:
             users += 1
             # create a record for the client
             client = Client(TYPE1,time)
@@ -70,16 +53,22 @@ def addClient(time, FES, queue, n_server, serv_t):
             if n_server is None or users<=n_server:
 
                 # sample the service time
-                service_time = random.expovariate(1.0/serv_t)
+                service_time, serv_id = serv.evalServTime()
                 #service_time = 1 + random.uniform(0, SEVICE_TIME)
 
                 # schedule when the client will finish the server
-                FES.put((time + service_time, "departure"))
+                FES.put((time + service_time, ["departure", serv_id]))
+                serv.makeBusy(serv_id)
+                
+                if n_server is not None:
+                    # Update the beginning of the service
+                    data.serv_busy[serv_id]['begin_last_service'] = time
 
                 # Update the waiting time for the client which starts to be served straight away
                 # Get the client - not extracting:
                 cli = queue[0]
                 data.waitingDelaysList.append(time - cli.arrival_time)
+
         else:
             data.countLosses += 1
     else:
@@ -97,11 +86,16 @@ def addClient(time, FES, queue, n_server, serv_t):
         if n_server is None or users<=n_server:
 
             # sample the service time
-            service_time = random.expovariate(1.0/serv_t)
+            service_time, serv_id = serv.evalServTime()
             #service_time = 1 + random.uniform(0, SEVICE_TIME)
 
             # schedule when the client will finish the server
-            FES.put((time + service_time, "departure"))
+            FES.put((time + service_time, ["departure", serv_id]))
+            serv.makeBusy(serv_id)
+
+            if n_server is not None:
+                # Update the beginning of the service
+                data.serv_busy[serv_id]['begin_last_service'] = time
             
             # Update the waiting time for the client which starts to be served straight away
             # Get the client - not extracting:
@@ -109,7 +103,7 @@ def addClient(time, FES, queue, n_server, serv_t):
             data.waitingDelaysList.append(time - cli.arrival_time)
 
 # arrivals *********************************************************************
-def arrival(time, FES, queue, n_server, arr_t, serv_t):
+def arrival(time, FES, queue, serv, queue_len,n_server, arr_t, serv_t):
     """
     arrival
     ---
@@ -141,16 +135,16 @@ def arrival(time, FES, queue, n_server, arr_t, serv_t):
     inter_arrival = random.expovariate(lambd=1.0/arr_t)
     
     # schedule the next arrival
-    FES.put((time + inter_arrival, "arrival"))
+    FES.put((time + inter_arrival, ["arrival"]))
 
     ################################
-    addClient(time, FES, queue, n_server, serv_t)
+    addClient(time, FES, queue, serv, queue_len, n_server, serv_t)
     ################################
 
 # ******************************************************************************
 
 # departures *******************************************************************
-def departure(time, FES, queue, n_server, arr_t, serv_t):
+def departure(time, FES, queue, serv_id, serv, n_server, arr_t, serv_t):
     """
     departure
     ---
@@ -180,6 +174,17 @@ def departure(time, FES, queue, n_server, arr_t, serv_t):
     if len(queue) > 0:
         # get the first element from the queue
         client = queue.pop(0)
+
+        # Make its server idle
+        serv.makeIdle(serv_id)
+
+        if n_server is not None:
+            # Update cumulative server busy time
+            
+            # Add to the cumulative time the time difference between now (service end)
+            # and the beginning of the service
+            # print(data.serv_busy[serv_id]['cumulative_time'])
+            data.serv_busy[serv_id]['cumulative_time'] += (time - data.serv_busy[serv_id]['begin_last_service'])
         
         # do whatever we need to do when clients go away
         
@@ -187,6 +192,9 @@ def departure(time, FES, queue, n_server, arr_t, serv_t):
         data.delaysList.append(time-client.arrival_time)
         users -= 1
     
+    # Update time
+    data.oldT = time
+
     can_add = False
 
     # See whether there are more clients in the line
@@ -196,9 +204,10 @@ def departure(time, FES, queue, n_server, arr_t, serv_t):
     elif users > 0:
         can_add = True
 
+    ########## SERVE ANOTHER CLIENT #############
     if can_add:
         # Sample the service time
-        service_time = random.expovariate(1.0/serv_t)
+        service_time, new_serv_id = serv.evalServTime()
 
         new_served = queue[0]
 
@@ -206,19 +215,24 @@ def departure(time, FES, queue, n_server, arr_t, serv_t):
         data.waitingDelaysList_no_zeros.append(time-new_served.arrival_time)
 
         # Schedule when the service will end
-        FES.put((time + service_time, "departure"))
+        FES.put((time + service_time, ["departure", new_serv_id]))
+        serv.makeBusy(new_serv_id)
+
+        if n_server is not None:
+            # Update the beginning of the service
+            data.serv_busy[new_serv_id]['begin_last_service'] = time
         
 # ******************************************************************************
-# the "main" of the simulation
+# simulation run function
 # ******************************************************************************
-def run(serv_t = SERVICE, arr_t = ARRIVAL, queue_l = QUEUE_LEN, n_server = N_SERVERS):
+def run(serv_t = 5.0, arr_t = 5.0, queue_len = None, n_server = 1):
 
     global users
     global data
     ###### Check - the number of servers cannot be unlimited if QUEUE_LEN is finite
-    if queue_l is not None and n_server is None:
+    if queue_len is not None and n_server is None:
         """ NOTE: the number of server 'wins' - it forces the queue length to be infinite """
-        queue_l = None
+        queue_len = None
     
     # The following contains the list of all clients currently present in the 
     # system (waiting + served):
@@ -226,7 +240,7 @@ def run(serv_t = SERVICE, arr_t = ARRIVAL, queue_l = QUEUE_LEN, n_server = N_SER
     users = 0
     random.seed(42)
 
-    data = Measure(0,0,0,0,0,0)
+    data = Measure(0,0,0,0,0,0, n_server)
 
     # Simulation time 
     time = 0
@@ -235,69 +249,61 @@ def run(serv_t = SERVICE, arr_t = ARRIVAL, queue_l = QUEUE_LEN, n_server = N_SER
     FES = PriorityQueue()
 
     # Schedule the FIRST ARRIVAL at t=0
-    FES.put((0, "arrival"))
+    FES.put((0, ["arrival"]))
+
+    # Create servers (class)
+    servers = Server(n_server, serv_t)
 
     # Simulate until the simulated time reaches a constant
     while time < SIM_TIME:
         (time, event_type) = FES.get()
 
-        if event_type == "arrival":
-            arrival(time, FES, MM_system, n_server, arr_t, serv_t)
+        if event_type[0] == "arrival":
+            arrival(time, FES, MM_system, servers, queue_len, n_server, arr_t, serv_t)
 
-        elif event_type == "departure":
-            departure(time, FES, MM_system, n_server, arr_t, serv_t)
+        elif event_type[0] == "departure":
+            departure(time, FES, MM_system, event_type[1], servers, n_server, arr_t, serv_t)
     
     return MM_system, data, time
 
-# ******************************************************************************
-# Print output data ************************************************************
-# ******************************************************************************
+# ******************************************************************
+# main  ************************************************************
+# ******************************************************************
 if __name__ == "__main__":
-    # arr_t_list = []
-    # time_list = []
-    # rho = []
-    # Narrivals = []
-    # Ndepartures = [] #number of transmitted packet
-    # Loads = []
-    # Ar = []
-    # Dr = []
-    # avgNuser = []
-    # avgDelay = []
-    # queueSize = []
-    # ndroppacket = []
-    # for arr_t in ARRIVAL:
-    #     [data, time] = run(arr_t)
-    #     rho.append(arr_t/SERVICE)
-    #     Narrivals.append(data.arr)
-    #     Ndepartures.append(data.dep)
-    #     Loads.append(SERVICE/arr_t)
-    #     Ar.append(data.arr/time)
-    #     Dr.append(data.dep/time)
-    #     avgNuser.append(data.ut/time)
-    #     avgDelay.append(data.delay/data.dep)
-    #     ndroppacket.append(data.countLosses)
-    #     arr_t_list.append(data.arr)
-    #     time_list.append(time)
-    
-    # plt.title("Narr & Ndep")
-    # plt.legend()
-    # plt.plot(ARRIVAL, Narrivals,  'r--', label = 'Number of arrival')
-    # plt.plot(ARRIVAL, Ndepartures,  'b-', label = 'Number of departure')
-    # plt.plot(ARRIVAL, ndroppacket,  'y-', label = 'Number of packet loss')
-    # plt.show()
-    
-    single_run = False
+    """ 
+    PARAMETERS:
+        - n_server: indicates the number of servers in the system
+                    If None: unlimited n. of servers
+        - serv_t: is the average service time; service rate = 1/SERVICE
+        - arr_t: is the average inter-arrival time; arrival rate = 1/ARRIVAL
+        - load=serv_t/arr_t: This relationship holds for M/M/1
+
+        - queue_len: defines the maximum number of elements in the system
+                 If None: unlimited queue
+    SIMULATION OPTION:
+        - single_run: run a single run with fixed parameters
+        - change_arr_t: launch multiple runs on different values of the arrival rate
+     
+    """
+    single_run = True
     change_arr_t = True
 
     if single_run:
+        n_server = 1
+        serv_t = 3.0 # is the average service time; service rate = 1/SERVICE
+        arr_t = 2.0 # is the average inter-arrival time; arrival rate = 1/ARRIVAL
+        load=serv_t/arr_t # This relationship holds for M/M/1
 
+        # queue_len defines the maximum number of elements in the system
+        # If None: unlimited queue
+        queue_len = 10
         MM_system, data, time = run()
 
         print("******************************************************************************")
         print("MEASUREMENTS: \n\nNo. of users in the queue (at stop): ",users,"\nNo. of total arrivals =",
             data.arr,"- No. of total departures =",data.dep)
          
-        print("Load: ",SERVICE/ARRIVAL)
+        print("Load: ",serv_t/arr_t)
         print("\nArrival rate: ",data.arr/time," - Departure rate: ",data.dep/time)
 
         print("\nAverage number of users: ",data.ut/time)
@@ -316,17 +322,36 @@ if __name__ == "__main__":
 
         print(f"\nAverage buffer occupancy: {data.avgBuffer/time}" )
 
+        print('\nBusy Time: ')
+
+        if n_server is not None:
+            for i in range(n_server):
+                print(f"> Server {i} - cumulative service time: {data.serv_busy[i]['cumulative_time']}")
+
         print("******************************************************************************")
 
         data.queuingDelayHist()
         data.plotQueuingDelays()
     
-    elif change_arr_t and len(ARRIVAL) > 0:
-        list_loss = []
-        for arr_t in ARRIVAL:
-            MM_system, data, time = run(arr_t=arr_t)
-            list_loss.append(data.countLosses)
-
-
-        plt.plot(ARRIVAL, list_loss,  'r--', label = 'Number of losses')
+    if change_arr_t:
+        arr_t_list = range(1, 20)
+        queue_len = 10
+        ndroppacket = []
+        Narrivals = []
+        Ndepartures = []
+        for arr_t in arr_t_list:
+            MM_system, data, time = run(arr_t=arr_t, queue_len=queue_len)
+            ndroppacket.append(data.countLosses)
+            Ndepartures.append(data.dep)
+            Narrivals.append(data.arr)
+            
+        plt.title("Narr & Ndep")
+        plt.plot(arr_t_list, Narrivals,  color='r', label = 'Number of arrival')
+        plt.plot(arr_t_list, Ndepartures,  color='b', label = 'Number of departure')
+        plt.plot(arr_t_list, ndroppacket,  color='y', label = 'Number of packet loss')
+        plt.legend()
+        plt.xlabel("arrival time [s]")
+        plt.grid()
         plt.show()
+
+
