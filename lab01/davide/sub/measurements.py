@@ -3,7 +3,7 @@ import numpy as np
 
 class Measure:
     def __init__(self, Narr, Ndep, NAveraegUser, OldTimeEvent, AverageDelay, countLoss, n_servers):
-        self.arr = Narr                         # Count arrivals
+        self.arr = Narr                         # Count arrivals (also including lost packets)
         self.dep = Ndep                         # Count departures (TRANSMITTED PACKETS)
         # Count average number of users in time - add to ut the number of clients times the time span it remained constant
         self.ut = NAveraegUser                  # N packets * dt
@@ -22,10 +22,13 @@ class Measure:
         self.waitingDelaysList = []             # Considering all clients which successfully entered system (not dropped)
         self.waitingDelaysList_no_zeros = []    # Without considering the ones that have been directy been served
 
-        self.avgBuffer = 0
-        # TODO: Loss probability (n. lost/n. arrivals)
+        self.avgBuffer = 0      # Average Buffer Occupancy - time average
+        # Increased by max(0, n_users - n_servers)*dt each time
 
-        # TODO: Busy time - time spent in non-idle state (for each server) - if many servers
+        # Loss probability (n. lost/n. arrivals)
+        # Simply obtained by dividing the number of losses by the total n. of arrivals
+
+        # Busy time - time spent in non-idle state (for each server) - if many servers
         # Idea: update server class, plus add new required parameter in this class (n_servers)
         # Question: how to deal with multiple servers? Which of the many is occupied?
         if n_servers is not None:
@@ -66,5 +69,9 @@ class Measure:
         plt.show()
 
     def plotServUtilDelay(self, sim_time):
-        # Divide the time by the total simulation time
-        pass
+        """
+        Plot a histogram containing for each server the utilization.
+        """
+        # Divide the time by the total simulation time to get the utilization
+        
+        
