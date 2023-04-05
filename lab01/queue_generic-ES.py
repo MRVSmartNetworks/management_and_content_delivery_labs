@@ -7,6 +7,7 @@ from sub.measurements import Measure
 from sub.client import Client
 from sub.server import Server
 import matplotlib.pyplot as plt
+from scipy.stats import t
 
 """
 General program for sinluating a queuing system.
@@ -222,7 +223,7 @@ def departure(time, FES, queue, serv_id, serv, n_server, arr_t, serv_t):
 # ******************************************************************************
 # simulation run function
 # ******************************************************************************
-def run(serv_t = 5.0, arr_t = 5.0, queue_len = None, n_server = 1):
+def run(serv_t = 5.0, arr_t = 5.0, queue_len = None, n_server = 1, seed=1):
 
     global users
     global data
@@ -235,7 +236,7 @@ def run(serv_t = 5.0, arr_t = 5.0, queue_len = None, n_server = 1):
     # system (waiting + served):
     MM_system=[]
     users = 0
-    random.seed(42)
+    random.seed(seed)
 
     data = Measure(0,0,0,0,0,0, n_server)
 
@@ -348,9 +349,11 @@ if __name__ == "__main__":
         data.queuingDelayHist()
         data.plotQueuingDelays()
         data.plotServUtilDelay(sim_time=SIM_TIME, policy="round_robin")
-    
+    #TODO: change infinte number of list in smarter way
     if change_arr_t:
         arr_t_list = range(1, 20)
+        n_iter = 10 # number of iteration for confidence interval
+        cnt_loss_seed = []
         queue_len = 10
         n_server = 1
         serv_t = 5.0
@@ -363,7 +366,11 @@ if __name__ == "__main__":
 
         for arr_t in arr_t_list:
             # number of packets plots
-            MM_system, data, time = run(arr_t=arr_t, serv_t=serv_t, n_server=n_server, queue_len=queue_len)
+            for i in range(n_iter):
+                MM_system, data, time = run(arr_t=arr_t, serv_t=serv_t, n_server=n_server, queue_len=queue_len, seed=None)
+                cnt_loss_seed.append(data.countLosses)
+                #TODO: evaluate confidence interval
+            t.interval(0.95, n_iter-1, np.mean(cnt_loss_seed))
             ndroppacket.append(data.countLosses)
             Ndepartures.append(data.dep)
             Narrivals.append(data.arr)
@@ -374,23 +381,23 @@ if __name__ == "__main__":
             waitingDelay.append(np.average(data.waitingDelaysList))
 
         # number of packets plots
-        plt.title(f"Packets on different arrival rates - queue_len = {queue_len} - n_server = {n_server} - serv_t= {serv_t}")
-        plt.plot(arr_t_list, Narrivals,  color='r', label = 'Number of arrival')
-        plt.plot(arr_t_list, Ndepartures,  color='b', label = 'Number of departure')
-        plt.plot(arr_t_list, ndroppacket,  color='y', label = 'Number of packet loss')
+        plt.title(f"Packets on different arrival rates - queue_len = {queue_len} - n_server = {n_server} - serv_t= {1./serv_t}")
+        plt.plot([1./x for x in arr_t_list], Narrivals,  color='r', label = 'Number of arrival')
+        plt.plot([1./x for x in arr_t_list], Ndepartures,  color='b', label = 'Number of departure')
+        plt.plot([1./x for x in arr_t_list], ndroppacket,  color='y', label = 'Number of packet loss')
         plt.legend()
-        plt.xlabel("arrival time [s]")
+        plt.xlabel("arrival rate [1/s]")
         plt.ylabel("no. of packets")
         plt.grid()
         plt.show()
 
         # Average delay plots
-        plt.title(f'Average delay - queue_len = {queue_len} - n_server = {n_server} - serv_t= {serv_t}')
-        plt.plot(arr_t_list, waitingDelay_no_zeros, label='Average waiting delay (only waiting)')
-        plt.plot(arr_t_list, waitingDelay, label='Average waiting delay')
-        plt.plot(arr_t_list, avgDelay, label='Average delay')
+        plt.title(f'Average delay - queue_len = {queue_len} - n_server = {n_server} - serv_t= {1./serv_t}')
+        plt.plot([1./x for x in arr_t_list], waitingDelay_no_zeros, label='Average waiting delay (only waiting)')
+        plt.plot([1./x for x in arr_t_list], waitingDelay, label='Average waiting delay')
+        plt.plot([1./x for x in arr_t_list], avgDelay, label='Average delay')
         plt.legend()
         plt.ylabel("waiting delay [s]")
-        plt.xlabel("arrival time [s]")
+        plt.xlabel("arrival rate [1/s]")
         plt.grid()
         plt.show()
