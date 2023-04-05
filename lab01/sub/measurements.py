@@ -3,6 +3,10 @@ import numpy as np
 
 class Measure:
     def __init__(self, Narr, Ndep, NAveraegUser, OldTimeEvent, AverageDelay, countLoss, n_servers):
+        """  """
+
+        self.n_serv = n_servers
+
         self.arr = Narr                         # Count arrivals (also including lost packets)
         self.dep = Ndep                         # Count departures (TRANSMITTED PACKETS)
         # Count average number of users in time - add to ut the number of clients times the time span it remained constant
@@ -68,10 +72,21 @@ class Measure:
         plt.grid()
         plt.show()
 
-    def plotServUtilDelay(self, sim_time):
+    def plotServUtilDelay(self, sim_time, policy=None):
         """
         Plot a histogram containing for each server the utilization.
         """
         # Divide the time by the total simulation time to get the utilization
-        
+        if self.n_serv is not None:
+            fig = plt.figure(figsize=(10, 5))
+            plt.bar(list(range(1, self.n_serv + 1)), [x['cumulative_time']/sim_time for x in self.serv_busy], width=0.4)
+            plt.xlabel("Server ID")
+            plt.ylabel("Utilization")
+            if policy is None:
+                plt.title(f"Server utilization")
+            elif isinstance(policy, str):
+                plt.title(f"Server policy: {policy}")
+            plt.show()
+        else:
+            print("Unable to print utilization of servers - they are unlimited")
         

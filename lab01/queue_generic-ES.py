@@ -249,7 +249,7 @@ def run(serv_t = 5.0, arr_t = 5.0, queue_len = None, n_server = 1):
     FES.put((0, ["arrival"]))
 
     # Create servers (class)
-    servers = Server(n_server, serv_t)
+    servers = Server(n_server, serv_t, policy="round_robin")
 
     # Simulate until the simulated time reaches a constant
     while time < SIM_TIME:
@@ -285,8 +285,8 @@ if __name__ == "__main__":
     change_arr_t = True
 
     if single_run:
-        n_server = 1
-        serv_t = 30.0 # is the average service time; service rate = 1/SERVICE
+        n_server = 3
+        serv_t = 3.0 # is the average service time; service rate = 1/SERVICE
         arr_t = 3.0 # is the average inter-arrival time; arrival rate = 1/ARRIVAL
         if n_server is not None:
             load=serv_t/(arr_t*n_server)    # Valid at steady-state
@@ -324,6 +324,8 @@ if __name__ == "__main__":
 
         if len(MM_system)>0:
             print("Arrival time of the last element in the queue:",MM_system[len(MM_system)-1].arrival_time)
+        else:
+            print("The queue was empty at the end of the simulation")
             
         print(f"\nAverage waiting delay: ")
         print(f"> Considering clients which are not waiting: {np.average(data.waitingDelaysList)}")
@@ -344,6 +346,7 @@ if __name__ == "__main__":
 
         data.queuingDelayHist()
         data.plotQueuingDelays()
+        data.plotServUtilDelay(sim_time=SIM_TIME, policy="round_robin")
     
     if change_arr_t:
         arr_t_list = range(1, 20)
