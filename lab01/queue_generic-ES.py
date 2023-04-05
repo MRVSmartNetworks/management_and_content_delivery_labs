@@ -7,6 +7,7 @@ from sub.measurements import Measure
 from sub.client import Client
 from sub.server import Server
 import matplotlib.pyplot as plt
+import scipy.stats as st
 
 """
 General program for sinluating a queuing system.
