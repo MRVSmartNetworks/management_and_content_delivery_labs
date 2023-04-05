@@ -55,7 +55,7 @@ def addClient(time, FES, queue, serv, queue_len, n_server):
             if n_server is None or users<=n_server:
 
                 # sample the service time
-                service_time, serv_id = serv.evalServTime()
+                service_time, serv_id = serv.evalServTime(type="constant")
                 #service_time = 1 + random.uniform(0, SEVICE_TIME)
 
                 # schedule when the client will finish the server
@@ -90,7 +90,7 @@ def addClient(time, FES, queue, serv, queue_len, n_server):
         if n_server is None or users<=n_server:
 
             # sample the service time
-            service_time, serv_id = serv.evalServTime()
+            service_time, serv_id = serv.evalServTime(type="constant")
             #service_time = 1 + random.uniform(0, SEVICE_TIME)
 
             # schedule when the client will finish the server
@@ -155,6 +155,7 @@ def departure(time, FES, queue, serv_id, serv, n_server):
     Perform the operations needed at a departure (end of service).
     Specifically, this method updates the measurements and removes the served
     client from the system, then it possibly adds another client to the service.
+
     Input parameters:
     - time: current time, extracted from the event in the FES.
     - FES: (priority queue) future event set (for scheduling). Used to place 
@@ -211,7 +212,7 @@ def departure(time, FES, queue, serv_id, serv, n_server):
     ########## SERVE ANOTHER CLIENT #############
     if can_add:
         # Sample the service time
-        service_time, new_serv_id = serv.evalServTime()
+        service_time, new_serv_id = serv.evalServTime(type="constant")
 
         new_served = queue[0]
 
@@ -229,7 +230,7 @@ def departure(time, FES, queue, serv_id, serv, n_server):
 # ******************************************************************************
 # simulation run function
 # ******************************************************************************
-def run(serv_t = 5.0, arr_t = 5.0, queue_len = None, n_server = 1):
+def run(serv_t=5.0, arr_t=5.0, queue_len=None, n_server=1):
     """
     run
     ---
@@ -267,7 +268,7 @@ def run(serv_t = 5.0, arr_t = 5.0, queue_len = None, n_server = 1):
     FES.put((0, ["arrival"]))
 
     # Create servers (class)
-    servers = Server(n_server, serv_t, policy="fastest_server")
+    servers = Server(n_server, serv_t, policy="first_idle")
 
     # Simulate until the simulated time reaches a constant
     while time < SIM_TIME:
@@ -303,10 +304,11 @@ if __name__ == "__main__":
     change_arr_t = True
 
     if single_run:
-        n_server = 3
+        n_server = 5
         
-        arr_rate = 1.
-        serv_rate = [10., 5., 2.]
+        arr_rate = 10.
+        # serv_rate = [10., 7., 5., 2., 1.]
+        serv_rate = 8.
 
         arr_t = 1./arr_rate # is the average inter-arrival time; arrival rate = 1/ARRIVAL
         
@@ -322,7 +324,7 @@ if __name__ == "__main__":
 
         # queue_len defines the maximum number of elements in the system
         # If None: unlimited queue
-        queue_len = 10
+        queue_len = 20
         if queue_len is not None:
             if n_server is not None:
                 queue_len = max(queue_len, n_server)        # This ensure compatible parameters
@@ -389,7 +391,7 @@ if __name__ == "__main__":
         data.plotUsrInTime(img_name=img_path+"usr_time_"+fileinfo+".png")
         data.queuingDelayHist(img_name=img_path+"hist_delay_"+fileinfo+".png")
         data.plotQueuingDelays(img_name=img_path+"delay_time_"+fileinfo+".png")
-        data.plotServUtilDelay(sim_time=SIM_TIME, policy="fastest_server", img_name=img_path+"serv_util_"+fileinfo+".png")
+        data.plotServUtilDelay(sim_time=SIM_TIME, policy="first_idle", img_name=img_path+"serv_util_"+fileinfo+".png")
     
     if change_arr_t:
         arr_t_list = range(1, 20)

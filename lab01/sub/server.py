@@ -47,7 +47,7 @@ class Server(object):
             self.valid_policies = [
                 "first_idle",           # The next client is served by the 1st idle server
                 "round_robin",           # The assignment is done in a round robin fashion (the client is assigned to server 'i', the next one to server 'i+1')
-                "fastest_server"
+                "faster_first"
             ]
 
             if isinstance(serv_t, int) or isinstance(serv_t, float):
@@ -99,11 +99,11 @@ class Server(object):
                 while not self.idle[self.current]:
                     self.current += 1
                     self.current = self.current % self.n_servers
-            elif self.policy == "fastest_server":
-                # Sort the service rates
+            elif self.policy == "faster_first":
+                # Sort the service rates (decreasing order)
                 sorted = np.argsort(-1*np.array(self.serv_rates))
-
-                i = 0
+                self.current = sorted[0]
+                i = 1
                 while not self.idle[self.current]:
                     self.current = sorted[i]
                     i += 1
@@ -123,12 +123,20 @@ class Server(object):
 
         Parameters:
         - type: distribution type
+            -> Possible values: 
+            > expovariate: exponential service time
+            > constant: constant service time equal to 1/serv_rate of current server
+            > uniform: uniform in (0, 2/serv_rate) of current server
         """
         # Update 
         self.chooseNextServer()
 
         if type == "expovariate":
             service_time = random.expovariate(self.serv_rates[self.current])
+        elif type == "constant":
+            service_time = 1./self.serv_rates[self.current]
+        elif type == "uniform":
+            service_time = (2./self.serv_rates[self.current])*random.uniform()
         else:
             raise ValueError(f"Invalid distribution type '{type}'!")
         
