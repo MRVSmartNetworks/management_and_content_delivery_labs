@@ -285,7 +285,7 @@ if __name__ == "__main__":
         - change_arr_t: launch multiple runs on different values of the arrival rate
      
     """
-    single_run = True
+    single_run = False
     change_arr_t = True
 
     if single_run:
@@ -335,21 +335,42 @@ if __name__ == "__main__":
     
     if change_arr_t:
         arr_t_list = range(1, 20)
-        queue_len = 10
+        queue_len = 15
+        n_server = 10
+        serv_t = 2.0
         ndroppacket = []
         Narrivals = []
         Ndepartures = []
+        waitingDelay_no_zeros = []
+        waitingDelay = []
         for arr_t in arr_t_list:
-            MM_system, data, time = run(arr_t=arr_t, queue_len=queue_len)
+            # number of packets plots
+            MM_system, data, time = run(arr_t=arr_t, serv_t=serv_t, queue_len=queue_len)
             ndroppacket.append(data.countLosses)
             Ndepartures.append(data.dep)
             Narrivals.append(data.arr)
             
-        plt.title("Narr & Ndep")
+            # Average delay plots
+            waitingDelay_no_zeros.append(np.average(data.waitingDelaysList_no_zeros))
+            waitingDelay.append(np.average(data.waitingDelaysList))
+
+        # number of packets plots
+        plt.title(f"Packets on different arrival rates - queue_len = {queue_len} - n_server = {n_server} - serv_t= {serv_t}")
         plt.plot(arr_t_list, Narrivals,  color='r', label = 'Number of arrival')
         plt.plot(arr_t_list, Ndepartures,  color='b', label = 'Number of departure')
         plt.plot(arr_t_list, ndroppacket,  color='y', label = 'Number of packet loss')
         plt.legend()
+        plt.xlabel("arrival time [s]")
+        plt.ylabel("no. of packets")
+        plt.grid()
+        plt.show()
+
+        # Average delay plots
+        plt.title(f'Average delay - queue_len = {queue_len} - n_server = {n_server} - serv_t= {serv_t}')
+        plt.plot(arr_t_list, waitingDelay_no_zeros, label='Average waiting delay (only waiting)')
+        plt.plot(arr_t_list, waitingDelay, label='Average waiting delay')
+        plt.legend()
+        plt.ylabel("waiting delay [s]")
         plt.xlabel("arrival time [s]")
         plt.grid()
         plt.show()
