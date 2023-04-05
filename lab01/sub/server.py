@@ -86,11 +86,13 @@ class Server(object):
             # count_loop = 0          # Used to track the attempts to find a free servers
 
             if self.policy == "first_idle":
+                # The policy 'first_idle' starts to look for a free server from the 1st one onwards
                 self.current = 0
                 while not self.idle[self.current]:
                     self.current += 1
                     self.current = self.current % self.n_servers
             elif self.policy == "round_robin":
+                # The policy 'round_robin' looks for a free server in an ordered way 
                 self.current += 1
                 self.current = self.current % self.n_servers
                 while not self.idle[self.current]:

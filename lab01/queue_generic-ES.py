@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 
 """
 General program for sinluating a queuing system.
-
 Parameters:
 - SERVICE
 - ARRIVAL
@@ -32,7 +31,6 @@ def addClient(time, FES, queue, serv, queue_len, n_server, serv_t):
     """
     Decide whether the user can be added.
     Need to look at the QUEUE_LEN parameter.
-
     This method is called by the 'arrival' subroutine.
     """
     global users, data
@@ -128,7 +126,7 @@ def arrival(time, FES, queue, serv, queue_len,n_server, arr_t, serv_t):
     # cumulate statistics
     data.arr += 1
     data.ut += users*(time-data.oldT)
-    data.avgBuffer += len(queue)*(time-data.oldT)
+    data.avgBuffer += max(0, users - n_server)*(time-data.oldT)
     data.oldT = time
 
     # sample the time until the next event
@@ -151,7 +149,6 @@ def departure(time, FES, queue, serv_id, serv, n_server, arr_t, serv_t):
     Perform the operations needed at a departure (end of service).
     Specifically, this method updates the measurements and removes the served
     client from the system, then it possibly adds another client to the service.
-
     Input parameters:
     - time: current time, extracted from the event in the FES.
     - FES: (priority queue) future event set (for scheduling). Used to place 
@@ -167,7 +164,7 @@ def departure(time, FES, queue, serv_id, serv, n_server, arr_t, serv_t):
     # cumulate statistics
     data.dep += 1
     data.ut += users*(time-data.oldT)
-    data.avgBuffer += len(queue)*(time-data.oldT)
+    data.avgBuffer += max(0, users - n_server)*(time-data.oldT)
 
     data.oldT = time
     
@@ -252,7 +249,7 @@ def run(serv_t = 5.0, arr_t = 5.0, queue_len = None, n_server = 1):
     FES.put((0, ["arrival"]))
 
     # Create servers (class)
-    servers = Server(n_server, serv_t)
+    servers = Server(n_server, serv_t, policy="round_robin")
 
     # Simulate until the simulated time reaches a constant
     while time < SIM_TIME:
@@ -277,10 +274,9 @@ if __name__ == "__main__":
         - serv_t: is the average service time; service rate = 1/SERVICE
         - arr_t: is the average inter-arrival time; arrival rate = 1/ARRIVAL
         - load=serv_t/arr_t: This relationship holds for M/M/1
-
         - queue_len: defines the maximum number of elements in the system
                  If None: unlimited queue
-    SIMULATION OPTION:
+    SIMULATION OPTIONS:
         - single_run: run a single run with fixed parameters
         - change_arr_t: launch multiple runs on different values of the arrival rate
      
@@ -289,22 +285,35 @@ if __name__ == "__main__":
     change_arr_t = True
 
     if single_run:
-        n_server = 1
+        n_server = 3
         serv_t = 3.0 # is the average service time; service rate = 1/SERVICE
-        arr_t = 2.0 # is the average inter-arrival time; arrival rate = 1/ARRIVAL
-        load=serv_t/arr_t # This relationship holds for M/M/1
+        arr_t = 3.0 # is the average inter-arrival time; arrival rate = 1/ARRIVAL
+        if n_server is not None:
+            load=serv_t/(arr_t*n_server)    # Valid at steady-state
 
         # queue_len defines the maximum number of elements in the system
         # If None: unlimited queue
         queue_len = 10
-        MM_system, data, time = run()
+        if queue_len is not None:
+            if n_server is not None:
+                queue_len = max(queue_len, n_server)        # This ensure compatible parameters
+            else:
+                queue_len = None
+        MM_system, data, time = run(serv_t, arr_t, queue_len, n_server)
+        print("******************************************************************************")
+
+        print("SYSTEM PARAMETERS:\n")
+        print(f"Number of servers: {n_server}\nMaximum queue length: {queue_len}")
+        print(f"Packet arrival rate: {1./arr_t}\nService rate: {1./serv_t}")
+
+        print(f"\nSimulation time: {SIM_TIME}")
 
         print("******************************************************************************")
         print("MEASUREMENTS: \n\nNo. of users in the queue (at stop): ",users,"\nNo. of total arrivals =",
             data.arr,"- No. of total departures =",data.dep)
          
         print("Load: ",serv_t/arr_t)
-        print("\nArrival rate: ",data.arr/time," - Departure rate: ",data.dep/time)
+        print("\nMeasured arrival rate: ",data.arr/time,"\nMeasured departure rate: ",data.dep/time)
 
         print("\nAverage number of users: ",data.ut/time)
 
@@ -315,23 +324,29 @@ if __name__ == "__main__":
 
         if len(MM_system)>0:
             print("Arrival time of the last element in the queue:",MM_system[len(MM_system)-1].arrival_time)
+        else:
+            print("The queue was empty at the end of the simulation")
             
-        print(f"Average waiting delay: ")
+        print(f"\nAverage waiting delay: ")
         print(f"> Considering clients which are not waiting: {np.average(data.waitingDelaysList)}")
         print(f"> Without considering clients which did not wait: {np.average(data.waitingDelaysList_no_zeros)}")
 
         print(f"\nAverage buffer occupancy: {data.avgBuffer/time}" )
 
-        print('\nBusy Time: ')
+        print(f"\nLoss probability: {data.countLosses/data.arr}")
 
         if n_server is not None:
+            # The server occupancy only makes sense if the number of servers is 
+            # finite (and we can define) a policy for the servers utilization
+            print('\nBusy Time: ')
             for i in range(n_server):
-                print(f"> Server {i} - cumulative service time: {data.serv_busy[i]['cumulative_time']}")
+                print(f"> Server {i+1} - cumulative service time: {data.serv_busy[i]['cumulative_time']}")
 
         print("******************************************************************************")
 
         data.queuingDelayHist()
         data.plotQueuingDelays()
+        data.plotServUtilDelay(sim_time=SIM_TIME, policy="round_robin")
     
     if change_arr_t:
         arr_t_list = range(1, 20)
@@ -353,5 +368,3 @@ if __name__ == "__main__":
         plt.xlabel("arrival time [s]")
         plt.grid()
         plt.show()
-
-
