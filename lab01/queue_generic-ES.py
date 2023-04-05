@@ -283,11 +283,12 @@ if __name__ == "__main__":
     """
     single_run = False
     change_arr_t = True
+    multi_vs_single = True
 
     if single_run:
-        n_server = 3
-        serv_t = 3.0 # is the average service time; service rate = 1/SERVICE
-        arr_t = 3.0 # is the average inter-arrival time; arrival rate = 1/ARRIVAL
+        n_server = 4
+        serv_t = 2.0 # is the average service time; service rate = 1/SERVICE
+        arr_t = 15.0 # is the average inter-arrival time; arrival rate = 1/ARRIVAL
         if n_server is not None:
             load=serv_t/(arr_t*n_server)    # Valid at steady-state
 
@@ -350,22 +351,25 @@ if __name__ == "__main__":
     
     if change_arr_t:
         arr_t_list = range(1, 20)
-        queue_len = 15
-        n_server = 10
-        serv_t = 2.0
+        queue_len = 10
+        n_server = 1
+        serv_t = 5.0
         ndroppacket = []
         Narrivals = []
         Ndepartures = []
         waitingDelay_no_zeros = []
         waitingDelay = []
+        avgDelay = []
+
         for arr_t in arr_t_list:
             # number of packets plots
-            MM_system, data, time = run(arr_t=arr_t, serv_t=serv_t, queue_len=queue_len)
+            MM_system, data, time = run(arr_t=arr_t, serv_t=serv_t, n_server=n_server, queue_len=queue_len)
             ndroppacket.append(data.countLosses)
             Ndepartures.append(data.dep)
             Narrivals.append(data.arr)
             
             # Average delay plots
+            avgDelay.append(data.delay/data.dep)
             waitingDelay_no_zeros.append(np.average(data.waitingDelaysList_no_zeros))
             waitingDelay.append(np.average(data.waitingDelaysList))
 
@@ -384,6 +388,7 @@ if __name__ == "__main__":
         plt.title(f'Average delay - queue_len = {queue_len} - n_server = {n_server} - serv_t= {serv_t}')
         plt.plot(arr_t_list, waitingDelay_no_zeros, label='Average waiting delay (only waiting)')
         plt.plot(arr_t_list, waitingDelay, label='Average waiting delay')
+        plt.plot(arr_t_list, avgDelay, label='Average delay')
         plt.legend()
         plt.ylabel("waiting delay [s]")
         plt.xlabel("arrival time [s]")
