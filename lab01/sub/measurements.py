@@ -11,6 +11,7 @@ class Measure:
         self.dep = Ndep                         # Count departures (TRANSMITTED PACKETS)
         # Count average number of users in time - add to ut the number of clients times the time span it remained constant
         self.ut = NAveraegUser                  # N packets * dt
+        self.n_usr_t = [(0,0)]                  # Number of users in time, append tuple (n_user, current time) at each measurement
         self.oldT = OldTimeEvent                # Time of the last performed event
         self.delay = AverageDelay               # Average time spent in system
         #
@@ -47,7 +48,7 @@ class Measure:
 
         
 
-    def queuingDelayHist(self, mean_value=None):
+    def queuingDelayHist(self, mean_value=None, img_name=None):
         """
         Plot the histogram of the queuing delay values
         """
@@ -59,9 +60,11 @@ class Measure:
         plt.xlabel("Delay")
         plt.xlabel("N. in bins")
         plt.grid()
+        if img_name is not None:
+            plt.savefig(img_name)
         plt.show()
 
-    def plotQueuingDelays(self):
+    def plotQueuingDelays(self, img_name=None):
         """
         Plot the values of the queuing delays in the order they have been 
         added in the list (i.e., in time).
@@ -70,9 +73,11 @@ class Measure:
         plt.plot(list(range(len(self.delaysList))), self.delaysList)
         plt.title("Values of the queuing delay in time")
         plt.grid()
+        if img_name is not None:
+            plt.savefig(img_name)
         plt.show()
 
-    def plotServUtilDelay(self, sim_time, policy=None):
+    def plotServUtilDelay(self, sim_time, policy=None, img_name=None):
         """
         Plot a histogram containing for each server the utilization.
         """
@@ -86,7 +91,25 @@ class Measure:
                 plt.title(f"Server utilization")
             elif isinstance(policy, str):
                 plt.title(f"Server policy: {policy}")
+                if img_name is not None:
+                    img_name = img_name.split('.')[0] + f"_{policy}" + ".png"
+            plt.tight_layout()
+            if img_name is not None:
+                plt.savefig(img_name)
+            
             plt.show()
         else:
             print("Unable to print utilization of servers - they are unlimited")
+
+    def plotUsrInTime(self, img_name=None):
+        plt.figure(figsize=(12,5))
+        plt.plot([t[1] for t in self.n_usr_t], [t[0] for t in self.n_usr_t])
+        plt.title("Number of users in time")
+        plt.xlabel("time")
+        plt.ylabel("# packets")
+        plt.grid()
+        plt.tight_layout()
+        if img_name is not None:
+                plt.savefig(img_name)
         
+        plt.show()
