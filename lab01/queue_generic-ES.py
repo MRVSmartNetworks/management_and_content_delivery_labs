@@ -30,7 +30,7 @@ img_path = "report/images/"         # To be filled with desired name
 # ******************************************************************************
 # Additional methods:
 
-def addClient(time, FES, queue, serv, queue_len, n_server, serv_t):
+def addClient(time, FES, queue, serv, queue_len, n_server):
     """
     Decide whether the user can be added.
     Need to look at the QUEUE_LEN parameter.
@@ -107,7 +107,7 @@ def addClient(time, FES, queue, serv, queue_len, n_server, serv_t):
             data.waitingDelaysList.append(time - cli.arrival_time)
 
 # arrivals *********************************************************************
-def arrival(time, FES, queue, serv, queue_len,n_server, arr_t, serv_t):
+def arrival(time, FES, queue, serv, queue_len,n_server, arr_t):
     """
     arrival
     ---
@@ -142,13 +142,13 @@ def arrival(time, FES, queue, serv, queue_len,n_server, arr_t, serv_t):
     FES.put((time + inter_arrival, ["arrival"]))
 
     ################################
-    addClient(time, FES, queue, serv, queue_len, n_server, serv_t)
+    addClient(time, FES, queue, serv, queue_len, n_server)
     ################################
 
 # ******************************************************************************
 
 # departures *******************************************************************
-def departure(time, FES, queue, serv_id, serv, n_server, arr_t, serv_t):
+def departure(time, FES, queue, serv_id, serv, n_server):
     """
     departure
     ---
@@ -230,9 +230,20 @@ def departure(time, FES, queue, serv_id, serv, n_server, arr_t, serv_t):
 # simulation run function
 # ******************************************************************************
 def run(serv_t = 5.0, arr_t = 5.0, queue_len = None, n_server = 1):
+    """
+    run
+    ---
+    Run the simulation of the queuing system.
 
+    Input parameters:
+    - serv_t: average service time (1/serv_rate)
+    - arr_t: average inter-arrival time (1/arr_rate)
+    - queue_len: maximum queue length (if None then infinite queue)
+    - n_server: number of servers (if None then infinite queue)
+    """
     global users
     global data
+
     ###### Check - the number of servers cannot be unlimited if QUEUE_LEN is finite
     if queue_len is not None and n_server is None:
         """ NOTE: the number of server 'wins' - it forces the queue length to be infinite """
@@ -256,17 +267,17 @@ def run(serv_t = 5.0, arr_t = 5.0, queue_len = None, n_server = 1):
     FES.put((0, ["arrival"]))
 
     # Create servers (class)
-    servers = Server(n_server, serv_t, policy="first_idle")
+    servers = Server(n_server, serv_t, policy="fastest_server")
 
     # Simulate until the simulated time reaches a constant
     while time < SIM_TIME:
         (time, event_type) = FES.get()
 
         if event_type[0] == "arrival":
-            arrival(time, FES, MM_system, servers, queue_len, n_server, arr_t, serv_t)
+            arrival(time, FES, MM_system, servers, queue_len, n_server, arr_t)
 
         elif event_type[0] == "departure":
-            departure(time, FES, MM_system, event_type[1], servers, n_server, arr_t, serv_t)
+            departure(time, FES, MM_system, event_type[1], servers, n_server)
     
     return MM_system, data, time
 
@@ -294,13 +305,20 @@ if __name__ == "__main__":
     if single_run:
         n_server = 3
         
-        arr_rate = 5.
-        serv_rate = 10.
+        arr_rate = 1.
+        serv_rate = [10., 5., 2.]
 
         arr_t = 1./arr_rate # is the average inter-arrival time; arrival rate = 1/ARRIVAL
-        serv_t = 1./serv_rate # is the average service time; service rate = 1/SERVICE
-        if n_server is not None:
-            load=serv_t/(arr_t*n_server)    # Valid at steady-state
+        
+        if isinstance(serv_rate, int) or isinstance(serv_rate, float):
+            serv_t = 1./serv_rate # is the average service time; service rate = 1/SERVICE
+        elif isinstance(serv_rate, list):
+            serv_t = [1./x for x in serv_rate]
+        
+        if n_server is not None and (isinstance(serv_t, int) or isinstance(serv_t, float)):
+            load = serv_t/(arr_t*n_server)    # Valid at steady-state
+        elif n_server is not None and isinstance(serv_t, list):
+            load = arr_rate/sum(serv_rate)
 
         # queue_len defines the maximum number of elements in the system
         # If None: unlimited queue
@@ -315,7 +333,7 @@ if __name__ == "__main__":
 
         print("SYSTEM PARAMETERS:\n")
         print(f"Number of servers: {n_server}\nMaximum queue length: {queue_len}")
-        print(f"Packet arrival rate: {1./arr_t}\nService rate: {1./serv_t}")
+        print(f"Packet arrival rate: {1./arr_t}\nService rate(s): {serv_rate}")
 
         print(f"\nSimulation time: {SIM_TIME}")
 
@@ -323,7 +341,7 @@ if __name__ == "__main__":
         print("MEASUREMENTS: \n\nNo. of users in the queue (at stop): ",users,"\nNo. of total arrivals =",
             data.arr,"- No. of total departures =",data.dep)
          
-        print("Load: ",serv_t/arr_t)
+        print("Load (theor.): ", load)
         print("\nMeasured arrival rate: ",data.arr/time,"\nMeasured departure rate: ",data.dep/time)
 
         print("\nAverage number of users: ",data.ut/time)
@@ -371,7 +389,7 @@ if __name__ == "__main__":
         data.plotUsrInTime(img_name=img_path+"usr_time_"+fileinfo+".png")
         data.queuingDelayHist(img_name=img_path+"hist_delay_"+fileinfo+".png")
         data.plotQueuingDelays(img_name=img_path+"delay_time_"+fileinfo+".png")
-        data.plotServUtilDelay(sim_time=SIM_TIME, policy="first_idle", img_name=img_path+"serv_util_"+fileinfo+".png")
+        data.plotServUtilDelay(sim_time=SIM_TIME, policy="fastest_server", img_name=img_path+"serv_util_"+fileinfo+".png")
     
     if change_arr_t:
         arr_t_list = range(1, 20)

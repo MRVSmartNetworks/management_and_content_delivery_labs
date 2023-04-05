@@ -7,14 +7,14 @@ import warnings
 # ******************************************************************************
 class Server(object):
     # constructor
-    def __init__(self, n_serv, dep_rate, policy="first_idle"):
+    def __init__(self, n_serv, serv_t, policy="first_idle"):
         """
         Class used to model servers in the queuing system. 
 
         Parameters:
         - n_serv: number of servers
-        - dep_rate: service rate; if one single value it is the rate for all 
-        servers, if it is a list, it contains the rates for each server (the 
+        - serv_t: average service time; if one single value it is the value for all 
+        servers, if it is a list, it contains the values for each server (the 
         length must be n_serv)
         - policy: it is the policy for the choice of the server; default: 
         'first_idle'
@@ -35,26 +35,27 @@ class Server(object):
 
             # The service rate for the case of infinite servers is a list containing one single 
             # value (the index self.current will always stay the same)
-            if isinstance(dep_rate, int) or isinstance(dep_rate, float):
-                self.dep_rates = [dep_rate]
-            elif isinstance(dep_rate, list) and len(dep_rate) == 1:
-                self.dep_rates = dep_rate
+            if isinstance(serv_t, int) or isinstance(serv_t, float):
+                self.serv_rates = [1./serv_t]
+            elif isinstance(serv_t, list) and len(serv_t) == 1:
+                self.serv_rates = [1./x for x in serv_t]
             else:
-                raise ValueError("The value for 'dep_rate' is wrong!")
+                raise ValueError("The value for 'serv_rate' is wrong!")
 
         else:
             # Limited servers
             self.valid_policies = [
                 "first_idle",           # The next client is served by the 1st idle server
-                "round_robin"           # The assignment is done in a round robin fashion (the client is assigned to server 'i', the next one to server 'i+1')
+                "round_robin",           # The assignment is done in a round robin fashion (the client is assigned to server 'i', the next one to server 'i+1')
+                "fastest_server"
             ]
 
-            if isinstance(dep_rate, int) or isinstance(dep_rate, float):
-                self.dep_rates = [dep_rate] * n_serv
-            elif isinstance(dep_rate, list) and len(dep_rate) == n_serv:
-                self.dep_rates = dep_rate
+            if isinstance(serv_t, int) or isinstance(serv_t, float):
+                self.serv_rates = [1./serv_t] * n_serv
+            elif isinstance(serv_t, list) and len(serv_t) == n_serv:
+                self.serv_rates = [1./x for x in serv_t]
             else:
-                raise ValueError("The value for 'dep_rate' is wrong!")
+                raise ValueError("The value for 'serv_rate' is wrong!")
 
             # Check for correct policy
             if policy not in self.valid_policies:
@@ -98,6 +99,15 @@ class Server(object):
                 while not self.idle[self.current]:
                     self.current += 1
                     self.current = self.current % self.n_servers
+            elif self.policy == "fastest_server":
+                # Sort the service rates
+                sorted = np.argsort(-1*np.array(self.serv_rates))
+
+                i = 0
+                while not self.idle[self.current]:
+                    self.current = sorted[i]
+                    i += 1
+                    self.current = self.current % self.n_servers
         else:
             # No need to keep counter if infinite n. of servers - leave it 0
             self.current = 0
@@ -118,7 +128,7 @@ class Server(object):
         self.chooseNextServer()
 
         if type == "expovariate":
-            service_time = random.expovariate(1.0/self.dep_rates[self.current])
+            service_time = random.expovariate(self.serv_rates[self.current])
         else:
             raise ValueError(f"Invalid distribution type '{type}'!")
         
