@@ -22,7 +22,7 @@ Parameters:
 # ******************************************************************************
 TYPE1 = 1 
 
-SIM_TIME = 500000
+SIM_TIME = 50000
 
 img_path = "report/images/"         # To be filled with desired name
 
@@ -41,6 +41,7 @@ def addClient(time, FES, queue, serv, queue_len, n_server, serv_t):
         # Limited length
         if users < queue_len:
             users += 1
+            data.n_usr_t.append((users, time))
             # create a record for the client
             client = Client(TYPE1,time)
             # insert the record in the queue
@@ -70,11 +71,13 @@ def addClient(time, FES, queue, serv, queue_len, n_server, serv_t):
                 data.waitingDelaysList.append(time - cli.arrival_time)
 
         else:
+            # Lost client
             data.countLosses += 1
     else:
         # Unlimited length
         users += 1
-    
+        data.n_usr_t.append((users, time))
+
         # create a record for the client
         client = Client(TYPE1,time)
 
@@ -190,6 +193,7 @@ def departure(time, FES, queue, serv_id, serv, n_server, arr_t, serv_t):
         data.delay += (time-client.arrival_time)
         data.delaysList.append(time-client.arrival_time)
         users -= 1
+        data.n_usr_t.append((users, time))
     
     # Update time
     data.oldT = time
@@ -251,7 +255,7 @@ def run(serv_t = 5.0, arr_t = 5.0, queue_len = None, n_server = 1):
     FES.put((0, ["arrival"]))
 
     # Create servers (class)
-    servers = Server(n_server, serv_t, policy="round_robin")
+    servers = Server(n_server, serv_t, policy="first_idle")
 
     # Simulate until the simulated time reaches a constant
     while time < SIM_TIME:
@@ -362,10 +366,11 @@ if __name__ == "__main__":
             n_c = str(queue_len)
 
         fileinfo = f"{n_s}_serv_{n_c}_queue"
-
+        
+        data.plotUsrInTime(img_name=img_path+"usr_time_"+fileinfo+".png")
         data.queuingDelayHist(img_name=img_path+"hist_delay_"+fileinfo+".png")
         data.plotQueuingDelays(img_name=img_path+"delay_time_"+fileinfo+".png")
-        data.plotServUtilDelay(sim_time=SIM_TIME, policy="round_robin", img_name=img_path+"serv_util_"+fileinfo+".png")
+        data.plotServUtilDelay(sim_time=SIM_TIME, policy="first_idle", img_name=img_path+"serv_util_"+fileinfo+".png")
     
     if change_arr_t:
         arr_t_list = range(1, 20)
