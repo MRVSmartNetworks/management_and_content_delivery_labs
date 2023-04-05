@@ -24,6 +24,8 @@ TYPE1 = 1
 
 SIM_TIME = 500000
 
+img_path = "report/images/"         # To be filled with desired name
+
 # ******************************************************************************
 # Additional methods:
 
@@ -286,8 +288,12 @@ if __name__ == "__main__":
 
     if single_run:
         n_server = 3
-        serv_t = 3.0 # is the average service time; service rate = 1/SERVICE
-        arr_t = 3.0 # is the average inter-arrival time; arrival rate = 1/ARRIVAL
+        
+        arr_rate = 5.
+        serv_rate = 10.
+
+        arr_t = 1./arr_rate # is the average inter-arrival time; arrival rate = 1/ARRIVAL
+        serv_t = 1./serv_rate # is the average service time; service rate = 1/SERVICE
         if n_server is not None:
             load=serv_t/(arr_t*n_server)    # Valid at steady-state
 
@@ -344,9 +350,22 @@ if __name__ == "__main__":
 
         print("******************************************************************************")
 
-        data.queuingDelayHist()
-        data.plotQueuingDelays()
-        data.plotServUtilDelay(sim_time=SIM_TIME, policy="round_robin")
+        # Create name for images (used to determine the parameters)
+        if n_server is None:
+            n_s = "inf"
+        else:
+            n_s = str(n_server)
+
+        if queue_len is None:
+            n_c = "inf"
+        else:
+            n_c = str(queue_len)
+
+        fileinfo = f"{n_s}_serv_{n_c}_queue"
+
+        data.queuingDelayHist(img_name=img_path+"hist_delay_"+fileinfo+".png")
+        data.plotQueuingDelays(img_name=img_path+"delay_time_"+fileinfo+".png")
+        data.plotServUtilDelay(sim_time=SIM_TIME, policy="round_robin", img_name=img_path+"serv_util_"+fileinfo+".png")
     
     if change_arr_t:
         arr_t_list = range(1, 20)

@@ -47,7 +47,7 @@ class Measure:
 
         
 
-    def queuingDelayHist(self, mean_value=None):
+    def queuingDelayHist(self, mean_value=None, img_name=None):
         """
         Plot the histogram of the queuing delay values
         """
@@ -59,9 +59,11 @@ class Measure:
         plt.xlabel("Delay")
         plt.xlabel("N. in bins")
         plt.grid()
+        if img_name is not None:
+            plt.savefig(img_name)
         plt.show()
 
-    def plotQueuingDelays(self):
+    def plotQueuingDelays(self, img_name=None):
         """
         Plot the values of the queuing delays in the order they have been 
         added in the list (i.e., in time).
@@ -70,9 +72,11 @@ class Measure:
         plt.plot(list(range(len(self.delaysList))), self.delaysList)
         plt.title("Values of the queuing delay in time")
         plt.grid()
+        if img_name is not None:
+            plt.savefig(img_name)
         plt.show()
 
-    def plotServUtilDelay(self, sim_time, policy=None):
+    def plotServUtilDelay(self, sim_time, policy=None, img_name=None):
         """
         Plot a histogram containing for each server the utilization.
         """
@@ -86,6 +90,11 @@ class Measure:
                 plt.title(f"Server utilization")
             elif isinstance(policy, str):
                 plt.title(f"Server policy: {policy}")
+                if img_name is not None:
+                    img_name = img_name.split('.')[0] + f"_{policy}" + ".png"
+
+            if img_name is not None:
+                plt.savefig(img_name)
             plt.show()
         else:
             print("Unable to print utilization of servers - they are unlimited")
