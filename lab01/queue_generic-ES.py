@@ -308,7 +308,7 @@ if __name__ == "__main__":
         
         arr_rate = 10.
         # serv_rate = [10., 7., 5., 2., 1.]
-        serv_rate = 8.
+        serv_rate = 3.
 
         arr_t = 1./arr_rate # is the average inter-arrival time; arrival rate = 1/ARRIVAL
         
