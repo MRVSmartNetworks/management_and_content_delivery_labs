@@ -308,7 +308,7 @@ if __name__ == "__main__":
     change_arr_t = True
 
     if single_run:
-        n_server = 5
+        n_server = 1
         
         arr_rate = 10.
         # serv_rate = [10., 7., 5., 2., 1.]
