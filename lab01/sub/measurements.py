@@ -83,7 +83,7 @@ class Measure:
         """
         # Divide the time by the total simulation time to get the utilization
         if self.n_serv is not None:
-            fig = plt.figure(figsize=(10, 5))
+            fig = plt.figure(figsize=(8, 4))
             plt.bar(list(range(1, self.n_serv + 1)), [x['cumulative_time']/sim_time for x in self.serv_busy], width=0.4)
             plt.xlabel("Server ID")
             plt.ylabel("Utilization")

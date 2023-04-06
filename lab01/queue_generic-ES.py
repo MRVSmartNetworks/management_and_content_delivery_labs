@@ -7,6 +7,7 @@ from sub.measurements import Measure
 from sub.client import Client
 from sub.server import Server
 import matplotlib.pyplot as plt
+import scipy.stats as st
 
 """
 General program for sinluating a queuing system.
@@ -29,7 +30,7 @@ img_path = "report/images/"         # To be filled with desired name
 # ******************************************************************************
 # Additional methods:
 
-def addClient(time, FES, queue, serv, queue_len, n_server, serv_t):
+def addClient(time, FES, queue, serv, queue_len, n_server):
     """
     Decide whether the user can be added.
     Need to look at the QUEUE_LEN parameter.
@@ -54,7 +55,7 @@ def addClient(time, FES, queue, serv, queue_len, n_server, serv_t):
             if n_server is None or users<=n_server:
 
                 # sample the service time
-                service_time, serv_id = serv.evalServTime()
+                service_time, serv_id = serv.evalServTime(type="constant")
                 #service_time = 1 + random.uniform(0, SEVICE_TIME)
 
                 # schedule when the client will finish the server
@@ -89,7 +90,7 @@ def addClient(time, FES, queue, serv, queue_len, n_server, serv_t):
         if n_server is None or users<=n_server:
 
             # sample the service time
-            service_time, serv_id = serv.evalServTime()
+            service_time, serv_id = serv.evalServTime(type="constant")
             #service_time = 1 + random.uniform(0, SEVICE_TIME)
 
             # schedule when the client will finish the server
@@ -106,7 +107,7 @@ def addClient(time, FES, queue, serv, queue_len, n_server, serv_t):
             data.waitingDelaysList.append(time - cli.arrival_time)
 
 # arrivals *********************************************************************
-def arrival(time, FES, queue, serv, queue_len,n_server, arr_t, serv_t):
+def arrival(time, FES, queue, serv, queue_len,n_server, arr_t):
     """
     arrival
     ---
@@ -141,19 +142,20 @@ def arrival(time, FES, queue, serv, queue_len,n_server, arr_t, serv_t):
     FES.put((time + inter_arrival, ["arrival"]))
 
     ################################
-    addClient(time, FES, queue, serv, queue_len, n_server, serv_t)
+    addClient(time, FES, queue, serv, queue_len, n_server)
     ################################
 
 # ******************************************************************************
 
 # departures *******************************************************************
-def departure(time, FES, queue, serv_id, serv, n_server, arr_t, serv_t):
+def departure(time, FES, queue, serv_id, serv, n_server):
     """
     departure
     ---
     Perform the operations needed at a departure (end of service).
     Specifically, this method updates the measurements and removes the served
     client from the system, then it possibly adds another client to the service.
+
     Input parameters:
     - time: current time, extracted from the event in the FES.
     - FES: (priority queue) future event set (for scheduling). Used to place 
@@ -210,7 +212,7 @@ def departure(time, FES, queue, serv_id, serv, n_server, arr_t, serv_t):
     ########## SERVE ANOTHER CLIENT #############
     if can_add:
         # Sample the service time
-        service_time, new_serv_id = serv.evalServTime()
+        service_time, new_serv_id = serv.evalServTime(type="constant")
 
         new_served = queue[0]
 
@@ -228,10 +230,21 @@ def departure(time, FES, queue, serv_id, serv, n_server, arr_t, serv_t):
 # ******************************************************************************
 # simulation run function
 # ******************************************************************************
-def run(serv_t = 5.0, arr_t = 5.0, queue_len = None, n_server = 1):
+def run(serv_t=5.0, arr_t=5.0, queue_len=None, n_server=1):
+    """
+    run
+    ---
+    Run the simulation of the queuing system.
 
+    Input parameters:
+    - serv_t: average service time (1/serv_rate)
+    - arr_t: average inter-arrival time (1/arr_rate)
+    - queue_len: maximum queue length (if None then infinite queue)
+    - n_server: number of servers (if None then infinite queue)
+    """
     global users
     global data
+
     ###### Check - the number of servers cannot be unlimited if QUEUE_LEN is finite
     if queue_len is not None and n_server is None:
         """ NOTE: the number of server 'wins' - it forces the queue length to be infinite """
@@ -262,10 +275,10 @@ def run(serv_t = 5.0, arr_t = 5.0, queue_len = None, n_server = 1):
         (time, event_type) = FES.get()
 
         if event_type[0] == "arrival":
-            arrival(time, FES, MM_system, servers, queue_len, n_server, arr_t, serv_t)
+            arrival(time, FES, MM_system, servers, queue_len, n_server, arr_t)
 
         elif event_type[0] == "departure":
-            departure(time, FES, MM_system, event_type[1], servers, n_server, arr_t, serv_t)
+            departure(time, FES, MM_system, event_type[1], servers, n_server)
     
     return MM_system, data, time
 
@@ -292,20 +305,27 @@ if __name__ == "__main__":
     multi_vs_single = True
 
     if single_run:
-        n_server = 3
+        n_server = 5
         
-        arr_rate = 5.
-        serv_rate = 10.
+        arr_rate = 10.
+        # serv_rate = [10., 7., 5., 2., 1.]
+        serv_rate = 8.
 
         arr_t = 1./arr_rate # is the average inter-arrival time; arrival rate = 1/ARRIVAL
-        serv_t = 1./serv_rate # is the average service time; service rate = 1/SERVICE
-
-        if n_server is not None:
-            load=serv_t/(arr_t*n_server)    # Valid at steady-state
+        
+        if isinstance(serv_rate, int) or isinstance(serv_rate, float):
+            serv_t = 1./serv_rate # is the average service time; service rate = 1/SERVICE
+        elif isinstance(serv_rate, list):
+            serv_t = [1./x for x in serv_rate]
+        
+        if n_server is not None and (isinstance(serv_t, int) or isinstance(serv_t, float)):
+            load = serv_t/(arr_t*n_server)    # Valid at steady-state
+        elif n_server is not None and isinstance(serv_t, list):
+            load = arr_rate/sum(serv_rate)
 
         # queue_len defines the maximum number of elements in the system
         # If None: unlimited queue
-        queue_len = 10
+        queue_len = 20
         if queue_len is not None:
             if n_server is not None:
                 queue_len = max(queue_len, n_server)        # This ensure compatible parameters
@@ -316,7 +336,7 @@ if __name__ == "__main__":
 
         print("SYSTEM PARAMETERS:\n")
         print(f"Number of servers: {n_server}\nMaximum queue length: {queue_len}")
-        print(f"Packet arrival rate: {1./arr_t}\nService rate: {1./serv_t}")
+        print(f"Packet arrival rate: {1./arr_t}\nService rate(s): {serv_rate}")
 
         print(f"\nSimulation time: {SIM_TIME}")
 
@@ -324,7 +344,7 @@ if __name__ == "__main__":
         print("MEASUREMENTS: \n\nNo. of users in the queue (at stop): ",users,"\nNo. of total arrivals =",
             data.arr,"- No. of total departures =",data.dep)
          
-        print("Load: ",serv_t/arr_t)
+        print("Load (theor.): ", load)
         print("\nMeasured arrival rate: ",data.arr/time,"\nMeasured departure rate: ",data.dep/time)
 
         print("\nAverage number of users: ",data.ut/time)
