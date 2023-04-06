@@ -58,13 +58,14 @@ class Measure:
         """
         Plot the histogram of the queuing delay values
         """
+        plt.figure(figsize=(8,4))
         plt.hist(self.delaysList, bins=round(np.sqrt(len(np.unique(self.delaysList)))))
         if mean_value == "on":
             # Plot the horizontal line corresponding to the mean
             plt.axvline(np.mean(self.delaysList), color='k', linestyle='dashed', linewidth=1)
         plt.title("Queuing delay histogram")
         plt.xlabel("Delay")
-        plt.xlabel("N. in bins")
+        plt.ylabel("# in bins")
         plt.grid()
         if img_name is not None:
             plt.savefig(img_name)
@@ -75,7 +76,7 @@ class Measure:
         Plot the values of the queuing delays in the order they have been 
         added in the list (i.e., in time).
         """
-
+        plt.figure(figsize=(8,4))
         plt.plot(list(range(len(self.delaysList))), self.delaysList)
         plt.title("Values of the queuing delay in time")
         plt.grid()
@@ -121,6 +122,7 @@ class Measure:
         plt.show()
 
     def plotArrivalsHist(self, mean_value="off", img_name=None):
+        plt.figure(figsize=(8,4))
         plt.hist(self.arrivalsList, bins=round(np.sqrt(len(np.unique(self.arrivalsList)))))
         if mean_value.lower() == "on":
             plt.axvline(np.mean(self.arrivalsList), color='k', linestyle='dashed', linewidth=1)
@@ -134,6 +136,7 @@ class Measure:
         plt.show()
 
     def plotServiceTimeHist(self, mean_value="off", img_name=None):
+        plt.figure(figsize=(8,4))
         plt.hist(self.servicesList, bins=round(np.sqrt(len(np.unique(self.servicesList)))))
         if mean_value.lower() == "on":
             plt.axvline(np.mean(self.servicesList), color='k', linestyle='dashed', linewidth=1)

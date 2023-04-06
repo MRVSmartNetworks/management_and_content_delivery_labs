@@ -55,7 +55,7 @@ def addClient(time, FES, queue, serv, queue_len, n_server):
             if n_server is None or users<=n_server:
 
                 # sample the service time
-                service_time, serv_id = serv.evalServTime(type="uniform")
+                service_time, serv_id = serv.evalServTime(type="constant")
                 data.servicesList.append(service_time)
                 #service_time = 1 + random.uniform(0, SEVICE_TIME)
 
@@ -91,7 +91,7 @@ def addClient(time, FES, queue, serv, queue_len, n_server):
         if n_server is None or users<=n_server:
 
             # sample the service time
-            service_time, serv_id = serv.evalServTime(type="uniform")
+            service_time, serv_id = serv.evalServTime(type="constant")
             data.servicesList.append(service_time)
             #service_time = 1 + random.uniform(0, SEVICE_TIME)
 
@@ -215,7 +215,7 @@ def departure(time, FES, queue, serv_id, serv, n_server):
     ########## SERVE ANOTHER CLIENT #############
     if can_add:
         # Sample the service time
-        service_time, new_serv_id = serv.evalServTime(type="uniform")
+        service_time, new_serv_id = serv.evalServTime(type="constant")
         data.servicesList.append(service_time)
 
         new_served = queue[0]
@@ -312,7 +312,7 @@ if __name__ == "__main__":
         
         arr_rate = 10.
         # serv_rate = [10., 7., 5., 2., 1.]
-        serv_rate = 100.
+        serv_rate = 20.
 
         arr_t = 1./arr_rate # is the average inter-arrival time; arrival rate = 1/ARRIVAL
         
