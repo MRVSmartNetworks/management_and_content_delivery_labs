@@ -134,9 +134,13 @@ class Server(object):
         if type == "expovariate":
             service_time = random.expovariate(self.serv_rates[self.current])
         elif type == "constant":
-            service_time = 1./self.serv_rates[self.current]
+            # The provided "mean" time is actually the value itself...
+            # Need to re-invert the service rate to find the time
+            service_time = 1/self.serv_rates[self.current]
         elif type == "uniform":
-            service_time = (2./self.serv_rates[self.current])*random.uniform()
+            # Uniform distribution; the mean is the specified parameter
+            # Need to re-invert the rate to get the mean
+            service_time = random.uniform(0, 2/self.serv_rates[self.current])
         else:
             raise ValueError(f"Invalid distribution type '{type}'!")
         

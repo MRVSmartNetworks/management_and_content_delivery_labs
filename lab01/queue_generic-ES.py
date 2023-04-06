@@ -55,7 +55,8 @@ def addClient(time, FES, queue, serv, queue_len, n_server):
             if n_server is None or users<=n_server:
 
                 # sample the service time
-                service_time, serv_id = serv.evalServTime(type="constant")
+                service_time, serv_id = serv.evalServTime(type="uniform")
+                data.servicesList.append(service_time)
                 #service_time = 1 + random.uniform(0, SEVICE_TIME)
 
                 # schedule when the client will finish the server
@@ -90,7 +91,8 @@ def addClient(time, FES, queue, serv, queue_len, n_server):
         if n_server is None or users<=n_server:
 
             # sample the service time
-            service_time, serv_id = serv.evalServTime(type="constant")
+            service_time, serv_id = serv.evalServTime(type="uniform")
+            data.servicesList.append(service_time)
             #service_time = 1 + random.uniform(0, SEVICE_TIME)
 
             # schedule when the client will finish the server
@@ -137,6 +139,7 @@ def arrival(time, FES, queue, serv, queue_len,n_server, arr_t):
 
     # sample the time until the next event
     inter_arrival = random.expovariate(lambd=1.0/arr_t)
+    data.arrivalsList.append(inter_arrival)
     
     # schedule the next arrival
     FES.put((time + inter_arrival, ["arrival"]))
@@ -212,7 +215,8 @@ def departure(time, FES, queue, serv_id, serv, n_server):
     ########## SERVE ANOTHER CLIENT #############
     if can_add:
         # Sample the service time
-        service_time, new_serv_id = serv.evalServTime(type="constant")
+        service_time, new_serv_id = serv.evalServTime(type="uniform")
+        data.servicesList.append(service_time)
 
         new_served = queue[0]
 
@@ -308,7 +312,7 @@ if __name__ == "__main__":
         
         arr_rate = 10.
         # serv_rate = [10., 7., 5., 2., 1.]
-        serv_rate = 3.
+        serv_rate = 100.
 
         arr_t = 1./arr_rate # is the average inter-arrival time; arrival rate = 1/ARRIVAL
         
@@ -330,7 +334,9 @@ if __name__ == "__main__":
                 queue_len = max(queue_len, n_server)        # This ensure compatible parameters
             else:
                 queue_len = None
+        ########################################
         MM_system, data, time = run(serv_t, arr_t, queue_len, n_server)
+        ########################################
         print("******************************************************************************")
 
         print("SYSTEM PARAMETERS:\n")
@@ -389,9 +395,11 @@ if __name__ == "__main__":
         fileinfo = f"{n_s}_serv_{n_c}_queue"
         
         data.plotUsrInTime(img_name=img_path+"usr_time_"+fileinfo+".png")
-        data.queuingDelayHist(img_name=img_path+"hist_delay_"+fileinfo+".png")
+        data.queuingDelayHist(mean_value="on", img_name=img_path+"hist_delay_"+fileinfo+".png")
         data.plotQueuingDelays(img_name=img_path+"delay_time_"+fileinfo+".png")
         data.plotServUtilDelay(sim_time=SIM_TIME, policy="first_idle", img_name=img_path+"serv_util_"+fileinfo+".png")
+        data.plotArrivalsHist(mean_value="on", img_name=img_path+"inter_arr_"+fileinfo+".png")
+        data.plotServiceTimeHist(mean_value="on", img_name=img_path+"serv_time_"+fileinfo+".png")
     
     if change_arr_t:
         arr_t_list = range(1, 20)

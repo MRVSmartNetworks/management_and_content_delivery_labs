@@ -21,6 +21,12 @@ class Measure:
         # Save all values as a list and make the histogram when needed
         self.delaysList = []
 
+        # Store all inter arrival times:
+        self.arrivalsList = []
+
+        # Store all service times
+        self.servicesList = []
+
         # AVERAGE WAITING DELAY PER PACKET
         # Evaluated between the arrival in the system and the start of the service
         # for each client
@@ -48,14 +54,14 @@ class Measure:
 
         
 
-    def queuingDelayHist(self, mean_value=None, img_name=None):
+    def queuingDelayHist(self, mean_value="off", img_name=None):
         """
         Plot the histogram of the queuing delay values
         """
         plt.hist(self.delaysList, bins=round(np.sqrt(len(np.unique(self.delaysList)))))
-        if mean_value is not None:
+        if mean_value == "on":
             # Plot the horizontal line corresponding to the mean
-            plt.hlines(y=mean_value, xmin=min(self.delaysList), xmax=max(self.delaysList))
+            plt.axvline(np.mean(self.delaysList), color='k', linestyle='dashed', linewidth=1)
         plt.title("Queuing delay histogram")
         plt.xlabel("Delay")
         plt.xlabel("N. in bins")
@@ -112,4 +118,30 @@ class Measure:
         if img_name is not None:
                 plt.savefig(img_name)
         
+        plt.show()
+
+    def plotArrivalsHist(self, mean_value="off", img_name=None):
+        plt.hist(self.arrivalsList, bins=round(np.sqrt(len(np.unique(self.arrivalsList)))))
+        if mean_value.lower() == "on":
+            plt.axvline(np.mean(self.arrivalsList), color='k', linestyle='dashed', linewidth=1)
+        plt.xlabel("Inter-arrival time values")
+        plt.ylabel("# in bin")
+        plt.title("Inter-arrival time distribution")
+        plt.grid()
+        plt.tight_layout()
+        if img_name is not None:
+            plt.savefig(img_name)
+        plt.show()
+
+    def plotServiceTimeHist(self, mean_value="off", img_name=None):
+        plt.hist(self.servicesList, bins=round(np.sqrt(len(np.unique(self.servicesList)))))
+        if mean_value.lower() == "on":
+            plt.axvline(np.mean(self.servicesList), color='k', linestyle='dashed', linewidth=1)
+        plt.xlabel("service time values")
+        plt.ylabel("# in bin")
+        plt.title("Service time distribution")
+        plt.grid()
+        plt.tight_layout()
+        if img_name is not None:
+            plt.savefig(img_name)
         plt.show()
