@@ -73,7 +73,7 @@ class Measure:
         plt.ylabel("# in bins")
         plt.grid()
         if img_name is not None:
-            plt.savefig(img_name)
+            plt.savefig(img_name, dpi=300)
         plt.show()
 
     def plotQueuingDelays(self, img_name=None):
@@ -89,7 +89,7 @@ class Measure:
         plt.title("Values of the queuing delay in time")
         plt.grid()
         if img_name is not None:
-            plt.savefig(img_name)
+            plt.savefig(img_name, dpi=300)
         plt.show()
 
     def plotServUtilDelay(self, sim_time, policy=None, img_name=None):
@@ -115,8 +115,7 @@ class Measure:
                     img_name = img_name.split('.')[0] + f"_{policy}" + ".png"
             plt.tight_layout()
             if img_name is not None:
-                plt.savefig(img_name)
-            
+                plt.savefig(img_name, dpi=300)
             plt.show()
         else:
             print("Unable to print utilization of servers - they are unlimited")
@@ -136,7 +135,7 @@ class Measure:
         plt.grid()
         plt.tight_layout()
         if img_name is not None:
-                plt.savefig(img_name)
+                plt.savefig(img_name, dpi=300)
         
         plt.show()
 
@@ -158,7 +157,7 @@ class Measure:
         plt.grid()
         plt.tight_layout()
         if img_name is not None:
-            plt.savefig(img_name)
+            plt.savefig(img_name, dpi=300)
         plt.show()
 
     def plotServiceTimeHist(self, mean_value=False, img_name=None):
@@ -179,7 +178,7 @@ class Measure:
         plt.grid()
         plt.tight_layout()
         if img_name is not None:
-            plt.savefig(img_name)
+            plt.savefig(img_name, dpi=300)
         plt.show()
 
     def waitingDelayHist(self, zeros=False, mean_value=False, img_name=None):
@@ -208,7 +207,7 @@ class Measure:
             plt.title("Waiting delay histogram - no zeros considered")
         plt.xlabel("Delay")
         plt.ylabel("# in bins")
-        plt.grid()
+        #plt.grid()
         if img_name is not None:
-            plt.savefig(img_name)
+            plt.savefig(img_name, dpi=300)
         plt.show()
