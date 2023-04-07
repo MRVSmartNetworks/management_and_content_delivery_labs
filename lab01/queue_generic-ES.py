@@ -8,6 +8,7 @@ from sub.client import Client
 from sub.server import Server
 import matplotlib.pyplot as plt
 from scipy.stats import t
+from sub.utilities import *
 
 """
 General program for sinluating a queuing system.
@@ -23,7 +24,7 @@ Parameters:
 # ******************************************************************************
 TYPE1 = 1 
 
-SIM_TIME = 500000
+SIM_TIME = 400000
 
 # ******************************************************************************
 # Additional methods:
@@ -283,13 +284,14 @@ if __name__ == "__main__":
      
     """
     single_run = False
-    change_arr_t = True
-    multi_vs_single = True
+    change_arr_t = False
+    multi_vs_single = False
+    change_queue_l = True
 
     if single_run:
-        n_server = 4
-        serv_t = 2.0 # is the average service time; service rate = 1/SERVICE
-        arr_t = 15.0 # is the average inter-arrival time; arrival rate = 1/ARRIVAL
+        n_server = 1
+        serv_t = 5.0 # is the average service time; service rate = 1/SERVICE
+        arr_t = 5.0 # is the average inter-arrival time; arrival rate = 1/ARRIVAL
         if n_server is not None:
             load=serv_t/(arr_t*n_server)    # Valid at steady-state
 
@@ -302,102 +304,72 @@ if __name__ == "__main__":
             else:
                 queue_len = None
         MM_system, data, time = run(serv_t, arr_t, queue_len, n_server)
-        print("******************************************************************************")
+        printResults(n_server, queue_len, arr_t, serv_t, users, data, time, MM_system, SIM_TIME)
+        
 
-        print("SYSTEM PARAMETERS:\n")
-        print(f"Number of servers: {n_server}\nMaximum queue length: {queue_len}")
-        print(f"Packet arrival rate: {1./arr_t}\nService rate: {1./serv_t}")
-
-        print(f"\nSimulation time: {SIM_TIME}")
-
-        print("******************************************************************************")
-        print("MEASUREMENTS: \n\nNo. of users in the queue (at stop): ",users,"\nNo. of total arrivals =",
-            data.arr,"- No. of total departures =",data.dep)
-         
-        print("Load: ",serv_t/arr_t)
-        print("\nMeasured arrival rate: ",data.arr/time,"\nMeasured departure rate: ",data.dep/time)
-
-        print("\nAverage number of users: ",data.ut/time)
-
-        print("\nNumber of losses: ", data.countLosses)
-
-        print("Average delay: ",data.delay/data.dep)
-        print("Actual queue size: ",len(MM_system))
-
-        if len(MM_system)>0:
-            print("Arrival time of the last element in the queue:",MM_system[len(MM_system)-1].arrival_time)
-        else:
-            print("The queue was empty at the end of the simulation")
-            
-        print(f"\nAverage waiting delay: ")
-        print(f"> Considering clients which are not waiting: {np.average(data.waitingDelaysList)}")
-        print(f"> Without considering clients which did not wait: {np.average(data.waitingDelaysList_no_zeros)}")
-
-        print(f"\nAverage buffer occupancy: {data.avgBuffer/time}" )
-
-        print(f"\nLoss probability: {data.countLosses/data.arr}")
-
-        if n_server is not None:
-            # The server occupancy only makes sense if the number of servers is 
-            # finite (and we can define) a policy for the servers utilization
-            print('\nBusy Time: ')
-            for i in range(n_server):
-                print(f"> Server {i+1} - cumulative service time: {data.serv_busy[i]['cumulative_time']}")
-
-        print("******************************************************************************")
-
-        data.queuingDelayHist()
-        data.plotQueuingDelays()
-        data.plotServUtilDelay(sim_time=SIM_TIME, policy="round_robin")
-    #TODO: change infinte number of list in smarter way
     if change_arr_t:
-        arr_t_list = range(1, 20)
-        n_iter = 10 # number of iteration for confidence interval
-        cnt_loss_seed = []
+        # system parameters
+        arr_t_list = range(3, 7)
         queue_len = 10
         n_server = 1
         serv_t = 5.0
-        ndroppacket = []
-        Narrivals = []
-        Ndepartures = []
-        waitingDelay_no_zeros = []
-        waitingDelay = []
-        avgDelay = []
+
+        # confidence interval 
+        n_iter = 6 # number of iteration for confidence interval
+        conf_level = 0.99
+        intervals = []
+        countloss_mean = []
+        
+        data_list = []
 
         for arr_t in arr_t_list:
-            # number of packets plots
+            
+            MM_system, data, time = run(arr_t=arr_t, serv_t=serv_t, n_server=n_server, queue_len=queue_len)
+            data_list.append(data)
+            # loop to evalaute confidence interval
+            data_conf_int = []
             for i in range(n_iter):
                 MM_system, data, time = run(arr_t=arr_t, serv_t=serv_t, n_server=n_server, queue_len=queue_len, seed=None)
-                cnt_loss_seed.append(data.countLosses)
-                #TODO: evaluate confidence interval
-            t.interval(0.95, n_iter-1, np.mean(cnt_loss_seed))
-            ndroppacket.append(data.countLosses)
-            Ndepartures.append(data.dep)
-            Narrivals.append(data.arr)
+                data_conf_int.append(data)
+
+            countloss = [cnt_loss.countLosses for cnt_loss in data_conf_int]
+            countloss_mean.append(np.mean(countloss))
+            intervals.append(t.interval(conf_level, n_iter-1, np.mean(countloss), np.std(countloss)/np.sqrt(n_iter)))
             
-            # Average delay plots
-            avgDelay.append(data.delay/data.dep)
-            waitingDelay_no_zeros.append(np.average(data.waitingDelaysList_no_zeros))
-            waitingDelay.append(np.average(data.waitingDelaysList))
+        # metrics plots on different arrival rates
+        plotArrivalRate(arr_t_list, data_list, [queue_len, n_server, serv_t])
 
-        # number of packets plots
-        plt.title(f"Packets on different arrival rates - queue_len = {queue_len} - n_server = {n_server} - serv_t= {1./serv_t}")
-        plt.plot([1./x for x in arr_t_list], Narrivals,  color='r', label = 'Number of arrival')
-        plt.plot([1./x for x in arr_t_list], Ndepartures,  color='b', label = 'Number of departure')
-        plt.plot([1./x for x in arr_t_list], ndroppacket,  color='y', label = 'Number of packet loss')
-        plt.legend()
-        plt.xlabel("arrival rate [1/s]")
-        plt.ylabel("no. of packets")
+        # confidence interval for no. of losses
+        plt.figure()
+        plt.title(f"Confidence intervals for no. of dropped packets - df={n_iter-1} - conf_level={conf_level}")
+        plt.plot([1./x for x in arr_t_list], countloss_mean)
+        plt.fill_between([1./x for x in arr_t_list], list(zip(*intervals))[0], list(zip(*intervals))[1], color='g', alpha=.1)
         plt.grid()
         plt.show()
 
-        # Average delay plots
-        plt.title(f'Average delay - queue_len = {queue_len} - n_server = {n_server} - serv_t= {1./serv_t}')
-        plt.plot([1./x for x in arr_t_list], waitingDelay_no_zeros, label='Average waiting delay (only waiting)')
-        plt.plot([1./x for x in arr_t_list], waitingDelay, label='Average waiting delay')
-        plt.plot([1./x for x in arr_t_list], avgDelay, label='Average delay')
-        plt.legend()
-        plt.ylabel("waiting delay [s]")
-        plt.xlabel("arrival rate [1/s]")
-        plt.grid()
-        plt.show()
+    if multi_vs_single:
+        # system parameters
+        arr_t = 10.0
+        queue_len = 10
+        serv_t = 5.0
+        
+        MM1, data1, time1 = run(arr_t=arr_t, serv_t=serv_t, n_server=1, queue_len=queue_len) # MM1 system
+        MM2, data2, time2 = run(arr_t=arr_t, serv_t=serv_t, n_server=2, queue_len=queue_len) # MM2 system
+        printResults(1, queue_len, arr_t, serv_t, users, data1, time1, MM1, SIM_TIME)
+        printResults(2, queue_len, arr_t, serv_t, users, data2, time2, MM2, SIM_TIME)
+
+    if change_queue_l:
+        queue_len_list = list(range(5, 15))
+        data_list = []
+        arr_t = 4.0
+        queue_len = 10
+        serv_t = 5.0
+        n_server = 2
+        for queue_len in queue_len_list:
+            MM2, data, time2 = run(arr_t=arr_t, serv_t=serv_t, n_server=n_server, queue_len=queue_len) # MM2 system
+            data_list.append(data)
+
+        plotQueueLen(queue_len_list, data_list, [arr_t, n_server, serv_t])
+
+            
+            
