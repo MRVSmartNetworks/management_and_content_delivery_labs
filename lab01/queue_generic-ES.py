@@ -55,7 +55,7 @@ def addClient(time, FES, queue, serv, queue_len, n_server):
             if n_server is None or users<=n_server:
 
                 # sample the service time
-                service_time, serv_id = serv.evalServTime(type="constant")
+                service_time, serv_id = serv.evalServTime(type="expovariate")
                 data.servicesList.append(service_time)
                 #service_time = 1 + random.uniform(0, SEVICE_TIME)
 
@@ -91,7 +91,7 @@ def addClient(time, FES, queue, serv, queue_len, n_server):
         if n_server is None or users<=n_server:
 
             # sample the service time
-            service_time, serv_id = serv.evalServTime(type="constant")
+            service_time, serv_id = serv.evalServTime(type="expovariate")
             data.servicesList.append(service_time)
             #service_time = 1 + random.uniform(0, SEVICE_TIME)
 
@@ -215,7 +215,7 @@ def departure(time, FES, queue, serv_id, serv, n_server):
     ########## SERVE ANOTHER CLIENT #############
     if can_add:
         # Sample the service time
-        service_time, new_serv_id = serv.evalServTime(type="constant")
+        service_time, new_serv_id = serv.evalServTime(type="expovariate")
         data.servicesList.append(service_time)
 
         new_served = queue[0]
@@ -395,11 +395,13 @@ if __name__ == "__main__":
         fileinfo = f"{n_s}_serv_{n_c}_queue"
         
         data.plotUsrInTime(img_name=img_path+"usr_time_"+fileinfo+".png")
-        data.queuingDelayHist(mean_value="on", img_name=img_path+"hist_delay_"+fileinfo+".png")
+        data.queuingDelayHist(mean_value=True, img_name=img_path+"hist_delay_"+fileinfo+".png")
         data.plotQueuingDelays(img_name=img_path+"delay_time_"+fileinfo+".png")
         data.plotServUtilDelay(sim_time=SIM_TIME, policy="first_idle", img_name=img_path+"serv_util_"+fileinfo+".png")
-        data.plotArrivalsHist(mean_value="on", img_name=img_path+"inter_arr_"+fileinfo+".png")
-        data.plotServiceTimeHist(mean_value="on", img_name=img_path+"serv_time_"+fileinfo+".png")
+        data.plotArrivalsHist(mean_value=True, img_name=img_path+"inter_arr_"+fileinfo+".png")
+        data.plotServiceTimeHist(mean_value=True, img_name=img_path+"serv_time_"+fileinfo+".png")
+        data.waitingDelayHist(zeros=True, mean_value=True, img_name=img_path+"wait_delay_"+fileinfo+".png")
+        data.waitingDelayHist(zeros=False, mean_value=True, img_name=img_path+"wait_delay_no_zero_"+fileinfo+".png")
     
     if change_arr_t:
         arr_t_list = range(1, 20)

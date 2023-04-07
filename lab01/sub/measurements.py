@@ -54,13 +54,18 @@ class Measure:
 
         
 
-    def queuingDelayHist(self, mean_value="off", img_name=None):
+    def queuingDelayHist(self, mean_value=False, img_name=None):
         """
         Plot the histogram of the queuing delay values
+
+        Parameters:
+        - mean_value: if true, plot the vertical line corresponding to the mean value of 
+        the queuing delay
+        - img_name: if provided (not None) the plot will be saved in the provided location
         """
         plt.figure(figsize=(8,4))
         plt.hist(self.delaysList, bins=round(np.sqrt(len(np.unique(self.delaysList)))))
-        if mean_value == "on":
+        if mean_value:
             # Plot the horizontal line corresponding to the mean
             plt.axvline(np.mean(self.delaysList), color='k', linestyle='dashed', linewidth=1)
         plt.title("Queuing delay histogram")
@@ -75,6 +80,9 @@ class Measure:
         """
         Plot the values of the queuing delays in the order they have been 
         added in the list (i.e., in time).
+
+        Parameters:
+        - img_name: if provided, save the plot in the specified location
         """
         plt.figure(figsize=(8,4))
         plt.plot(list(range(len(self.delaysList))), self.delaysList)
@@ -87,6 +95,11 @@ class Measure:
     def plotServUtilDelay(self, sim_time, policy=None, img_name=None):
         """
         Plot a histogram containing for each server the utilization.
+
+        Parameters:
+        - sim_time: value of the simulation time (needed for performing the normalization)
+        - policy: string containing the used policy for assigning server
+        - img_name: if provided, save the plot in the specified location
         """
         # Divide the time by the total simulation time to get the utilization
         if self.n_serv is not None:
@@ -109,6 +122,12 @@ class Measure:
             print("Unable to print utilization of servers - they are unlimited")
 
     def plotUsrInTime(self, img_name=None):
+        """
+        Plot the number of users in time.
+
+        Parameters:
+        - img_name: if provided, save the plot in the specified location
+        """
         plt.figure(figsize=(12,5))
         plt.plot([t[1] for t in self.n_usr_t], [t[0] for t in self.n_usr_t])
         plt.title("Number of users in time")
@@ -121,10 +140,17 @@ class Measure:
         
         plt.show()
 
-    def plotArrivalsHist(self, mean_value="off", img_name=None):
+    def plotArrivalsHist(self, mean_value=False, img_name=None):
+        """
+        Plot the distribution of the arrival rates.
+
+        Parameters:
+        - mean_value: if True, plot a vertical line corresponding to the experimental mean value
+        - img_name: if provided, save the plot in the specified location
+        """
         plt.figure(figsize=(8,4))
         plt.hist(self.arrivalsList, bins=round(np.sqrt(len(np.unique(self.arrivalsList)))))
-        if mean_value.lower() == "on":
+        if mean_value:
             plt.axvline(np.mean(self.arrivalsList), color='k', linestyle='dashed', linewidth=1)
         plt.xlabel("Inter-arrival time values")
         plt.ylabel("# in bin")
@@ -135,16 +161,54 @@ class Measure:
             plt.savefig(img_name)
         plt.show()
 
-    def plotServiceTimeHist(self, mean_value="off", img_name=None):
+    def plotServiceTimeHist(self, mean_value=False, img_name=None):
+        """
+        Plot the service time distribution.
+
+        Parameters:
+        - mean_value: if True, plot a vertical line corresponding to the experimental mean value
+        - img_name: if provided, save the plot in the specified location
+        """
         plt.figure(figsize=(8,4))
         plt.hist(self.servicesList, bins=round(np.sqrt(len(np.unique(self.servicesList)))))
-        if mean_value.lower() == "on":
+        if mean_value:
             plt.axvline(np.mean(self.servicesList), color='k', linestyle='dashed', linewidth=1)
         plt.xlabel("service time values")
         plt.ylabel("# in bin")
         plt.title("Service time distribution")
         plt.grid()
         plt.tight_layout()
+        if img_name is not None:
+            plt.savefig(img_name)
+        plt.show()
+
+    def waitingDelayHist(self, zeros=False, mean_value=False, img_name=None):
+        """
+        Plot the histogram of the queuing delay values
+
+        Parameters:
+        - zeros: if true, plot the distribution taking into account elements which do 
+        not wait before service, else, don't
+        - mean_value: if true, plot the vertical line corresponding to the mean value of 
+        the waiting delay
+        - img_name: if provided (not None) the plot will be saved in the provided location
+        """
+        plt.figure(figsize=(8,4))
+        if zeros:
+            plt.hist(self.waitingDelaysList, bins=round(np.sqrt(len(np.unique(self.waitingDelaysList)))))
+            if mean_value:
+                # Plot the horizontal line corresponding to the mean
+                plt.axvline(np.mean(self.waitingDelaysList), color='k', linestyle='dashed', linewidth=1)
+            plt.title("Waiting delay histogram")
+        else:
+            plt.hist(self.waitingDelaysList_no_zeros, bins=round(np.sqrt(len(np.unique(self.waitingDelaysList_no_zeros)))))
+            if mean_value:
+                # Plot the horizontal line corresponding to the mean
+                plt.axvline(np.mean(self.waitingDelaysList_no_zeros), color='k', linestyle='dashed', linewidth=1)
+            plt.title("Waiting delay histogram - no zeros considered")
+        plt.xlabel("Delay")
+        plt.ylabel("# in bins")
+        plt.grid()
         if img_name is not None:
             plt.savefig(img_name)
         plt.show()
