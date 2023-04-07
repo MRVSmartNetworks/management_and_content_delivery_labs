@@ -281,6 +281,8 @@ if __name__ == "__main__":
     SIMULATION OPTIONS:
         - single_run: run a single run with fixed parameters
         - change_arr_t: launch multiple runs on different values of the arrival rate
+        - multi_vs_single: comparison between MM1 vs MM2 systems
+        - change_queue_l: launch multiple runs on different queue length values
      
     """
     single_run = False
@@ -306,7 +308,6 @@ if __name__ == "__main__":
         MM_system, data, time = run(serv_t, arr_t, queue_len, n_server)
         printResults(n_server, queue_len, arr_t, serv_t, users, data, time, MM_system, SIM_TIME)
         
-
     if change_arr_t:
         # system parameters
         arr_t_list = range(3, 7)
@@ -359,6 +360,7 @@ if __name__ == "__main__":
         printResults(2, queue_len, arr_t, serv_t, users, data2, time2, MM2, SIM_TIME)
 
     if change_queue_l:
+
         queue_len_list = list(range(5, 15))
         data_list = []
         arr_t = 4.0
