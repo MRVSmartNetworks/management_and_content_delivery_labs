@@ -90,3 +90,17 @@ class Measure:
         else:
             print("Unable to print utilization of servers - they are unlimited")
         
+
+    def waitingDelayHist(self, mean_value=None):
+        """
+        Plot the histogram of the queuing delay values
+        """
+        plt.hist(self.waitingDelaysList_no_zeros, bins=round(np.sqrt(len(np.unique(self.waitingDelaysList_no_zeros)))))
+        if mean_value is not None:
+            # Plot the horizontal line corresponding to the mean
+            plt.hlines(y=mean_value, xmin=min(self.waitingDelaysList_no_zeros), xmax=max(self.waitingDelaysList_no_zeros))
+        plt.title("Waiting delay histogram")
+        plt.xlabel("Delay")
+        plt.xlabel("N. in bins")
+        plt.grid()
+        plt.show()

@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt 
 import numpy as np
 
-def printResults(n_server, queue_len, arr_t, serv_t, users, data, time, MM_system, SIM_TIME):
+def printResults(n_server, server_policy, queue_len, arr_t, serv_t, users, data, time, MM_system, SIM_TIME):
         print("******************************************************************************")
 
         print("SYSTEM PARAMETERS:\n")
@@ -47,8 +47,9 @@ def printResults(n_server, queue_len, arr_t, serv_t, users, data, time, MM_syste
         print("******************************************************************************")
 
         data.queuingDelayHist()
+        data.waitingDelayHist()
         data.plotQueuingDelays()
-        data.plotServUtilDelay(sim_time=SIM_TIME, policy="round_robin")
+        data.plotServUtilDelay(sim_time=SIM_TIME, policy=server_policy)
 
 
 def plotArrivalRate(arr_t_list, data_list, param):
@@ -92,9 +93,13 @@ def plotQueueLen(queue_len_list, data_list, param):
             - param[1]: number of servers
             - param[2]: service time
         """
+        # waitingDelay_no_zeros control for empty list
+        # for data in data_list:
+        #       if not data.waitingDelaysList_no_zeros:
+        #             data.waitingDelaysList_no_zeros = [0]
         # plots for number of packets
-        plt.figure()
-        plt.title(f"Packets on different arrival rates - arr_r = {1./param[0]} - n_server = {param[1]} - serv_r= {1./param[2]}")
+        fig = plt.figure(figsize=(10, 5))
+        plt.title(f"Packets on different arrival rates - arr_r = {round(1./param[0],2)} - n_server = {param[1]} - serv_r= {round(1./param[2], 2)}")
         plt.plot(queue_len_list, [data.arr for data in data_list],  color='r', label = 'Number of arrival')
         plt.plot(queue_len_list, [data.dep for data in data_list],  color='b', label = 'Number of departure')
         plt.plot(queue_len_list, [data.countLosses for data in data_list],  color='y', label = 'Number of packet loss')
@@ -102,15 +107,18 @@ def plotQueueLen(queue_len_list, data_list, param):
         plt.xlabel("queue length")
         plt.ylabel("no. of packets")
         plt.grid()
+        plt.savefig('lab01/report/images/queueVar_MM2.png')
 
         # Average delay plots
-        plt.figure()
-        plt.title(f'Average delay - arr_r = {1./param[0]} - n_server = {param[1]} - serv_r= {1./param[2]}')
-        plt.plot(queue_len_list, [np.average(data.waitingDelaysList_no_zeros) for data in data_list], label='Average waiting delay (only waiting)')
+        fig = plt.figure(figsize=(10, 5))
+        plt.title(f'Average delay - arr_r = {round(1./param[0],2)} - n_server = {param[1]} - serv_r= {round(1./param[2], 2)}')
+        plt.plot(queue_len_list, [0 if not data.waitingDelaysList_no_zeros else np.average(data.waitingDelaysList_no_zeros) for data in data_list], label='Average waiting delay (only waiting)')
         plt.plot(queue_len_list, [np.average(data.waitingDelaysList) for data in data_list], label='Average waiting delay')
         plt.plot(queue_len_list, [data.delay/data.dep for data in data_list], label='Average delay')
         plt.legend()
-        plt.ylabel("queue length")
-        plt.xlabel("arrival rate [1/s]")
+        plt.ylabel("waiting delay [s]")
+        plt.xlabel("queue length")
         plt.grid()
+        plt.savefig('lab01/report/images/queueVar_del_MM2.png')
+
         plt.show()

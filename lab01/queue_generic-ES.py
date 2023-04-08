@@ -24,7 +24,7 @@ Parameters:
 # ******************************************************************************
 TYPE1 = 1 
 
-SIM_TIME = 400000
+SIM_TIME = 500000
 
 # ******************************************************************************
 # Additional methods:
@@ -224,7 +224,7 @@ def departure(time, FES, queue, serv_id, serv, n_server, arr_t, serv_t):
 # ******************************************************************************
 # simulation run function
 # ******************************************************************************
-def run(serv_t = 5.0, arr_t = 5.0, queue_len = None, n_server = 1, seed=1):
+def run(serv_t = 5.0, arr_t = 5.0, queue_len = None, n_server = 1, server_policy = "first_idle",seed=1):
 
     global users
     global data
@@ -251,7 +251,7 @@ def run(serv_t = 5.0, arr_t = 5.0, queue_len = None, n_server = 1, seed=1):
     FES.put((0, ["arrival"]))
 
     # Create servers (class)
-    servers = Server(n_server, serv_t, policy="round_robin")
+    servers = Server(n_server, serv_t, policy=server_policy)
 
     # Simulate until the simulated time reaches a constant
     while time < SIM_TIME:
@@ -286,14 +286,14 @@ if __name__ == "__main__":
      
     """
     single_run = False
-    change_arr_t = False
+    change_arr_t = True
     multi_vs_single = False
-    change_queue_l = True
+    change_queue_l = False
 
     if single_run:
         n_server = 1
-        serv_t = 5.0 # is the average service time; service rate = 1/SERVICE
-        arr_t = 5.0 # is the average inter-arrival time; arrival rate = 1/ARRIVAL
+        serv_t = 2.0 # is the average service time; service rate = 1/SERVICE
+        arr_t = 6.0 # is the average inter-arrival time; arrival rate = 1/ARRIVAL
         if n_server is not None:
             load=serv_t/(arr_t*n_server)    # Valid at steady-state
 
@@ -319,7 +319,7 @@ if __name__ == "__main__":
         n_iter = 6 # number of iteration for confidence interval
         conf_level = 0.99
         intervals = []
-        countloss_mean = []
+        avgDelay_mean = []
         
         data_list = []
 
@@ -333,38 +333,37 @@ if __name__ == "__main__":
                 MM_system, data, time = run(arr_t=arr_t, serv_t=serv_t, n_server=n_server, queue_len=queue_len, seed=None)
                 data_conf_int.append(data)
 
-            countloss = [cnt_loss.countLosses for cnt_loss in data_conf_int]
-            countloss_mean.append(np.mean(countloss))
-            intervals.append(t.interval(conf_level, n_iter-1, np.mean(countloss), np.std(countloss)/np.sqrt(n_iter)))
+            avgDelay = [data.delay/data.dep for data in data_conf_int]
+            avgDelay_mean.append(np.mean(avgDelay))
+            intervals.append(t.interval(conf_level, n_iter-1, np.mean(avgDelay), np.std(avgDelay)/np.sqrt(n_iter)))
             
         # metrics plots on different arrival rates
         plotArrivalRate(arr_t_list, data_list, [queue_len, n_server, serv_t])
 
         # confidence interval for no. of losses
         plt.figure()
-        plt.title(f"Confidence intervals for no. of dropped packets - df={n_iter-1} - conf_level={conf_level}")
-        plt.plot([1./x for x in arr_t_list], countloss_mean)
-        plt.fill_between([1./x for x in arr_t_list], list(zip(*intervals))[0], list(zip(*intervals))[1], color='g', alpha=.1)
+        plt.title(f"Confidence intervals for average delay - df={n_iter-1} - conf_level={conf_level}")
+        plt.plot([1./x for x in arr_t_list], avgDelay_mean)
+        plt.fill_between([1./x for x in arr_t_list], list(zip(*intervals))[0], list(zip(*intervals))[1], color='r', alpha=.2)
         plt.grid()
         plt.show()
 
     if multi_vs_single:
         # system parameters
-        arr_t = 10.0
+        arr_t = 6.0
         queue_len = 10
         serv_t = 5.0
         
         MM1, data1, time1 = run(arr_t=arr_t, serv_t=serv_t, n_server=1, queue_len=queue_len) # MM1 system
         MM2, data2, time2 = run(arr_t=arr_t, serv_t=serv_t, n_server=2, queue_len=queue_len) # MM2 system
-        printResults(1, queue_len, arr_t, serv_t, users, data1, time1, MM1, SIM_TIME)
-        printResults(2, queue_len, arr_t, serv_t, users, data2, time2, MM2, SIM_TIME)
+        printResults(1, "first-idle", queue_len, arr_t, serv_t, users, data1, time1, MM1, SIM_TIME)
+        printResults(2, "first_idle", queue_len, arr_t, serv_t, users, data2, time2, MM2, SIM_TIME)
 
     if change_queue_l:
 
-        queue_len_list = list(range(5, 15))
+        queue_len_list = list(range(1, 12))
         data_list = []
-        arr_t = 4.0
-        queue_len = 10
+        arr_t = 6.0
         serv_t = 5.0
         n_server = 2
         for queue_len in queue_len_list:
