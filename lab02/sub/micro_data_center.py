@@ -28,19 +28,20 @@ class MicroDataCenter(Queue):
             client = self.queue.pop(0)
 
             if type_pkt == "B":
-                FES.put(time + tx_delay, ["arrival_cloud", client.type])
+                FES.put((time + tx_delay, [cloud_class.arr_name, client.type]))
             else:
                 # print something?
                 pass
-                # Make its server idle
-
+            """
+            # Make its server idle
+            serv.makeIdle(serv_id)
             if self.n_server is not None:
                 # Update cumulative server busy time
                 
                 # Add to the cumulative time the time difference between now (service end)
                 # and the beginning of the service
                 # print(data.serv_busy['cumulative_time'])
-                self.data.serv_busy['cumulative_time'] += (time - self.data.serv_busy['begin_last_service'])
+                self.data.serv_busy[serv_id]['cumulative_time'] += (time - self.data.serv_busy['begin_last_service']) """
                 
             # do whatever we need to do when clients go away
             

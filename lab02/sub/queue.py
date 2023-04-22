@@ -52,7 +52,7 @@ class Queue:
         """        
         #serv_id = event_type[1][1] ---> Removed - the Queue object needs to evaluate the next server
 
-        pkt_type = event_type[1][1]
+        pkt_type = event_type[1]
         if self.queue_len is not None:
             # Limited length
             if self.users < self.queue_len:
@@ -77,7 +77,7 @@ class Queue:
                     #service_time = 1 + random.uniform(0, SEVICE_TIME)
 
                     # schedule when the client will finish the server
-                    FES.put((time + service_time, [self.dep_name]))
+                    FES.put((time + service_time, [self.dep_name, client.type]))
                     self.servers.makeBusy(serv_id)
                     
                     if self.n_server is not None:
@@ -113,7 +113,7 @@ class Queue:
                 #service_time = 1 + random.uniform(0, SEVICE_TIME)
 
                 # schedule when the client will finish the server
-                FES.put((time + service_time, [self.dep_name, serv_id]))
+                FES.put((time + service_time, [self.dep_name, client.type]))
                 self.servers.makeBusy(serv_id)
 
                 if self.n_server is not None:
@@ -161,7 +161,7 @@ class Queue:
         ################################
 
     # departures *******************************************************************
-    def departure(self, time, FES, queue, event_type):
+    def departure(self, time, FES,event_type):
         """
         departure
         ---
@@ -178,8 +178,7 @@ class Queue:
         """
 
         #print("Departure no. ",data.dep+1," at time ",time," with ",users," users" )
-        serv_id = event_type[1][1]
-        type_pkt = event_type[1][2]
+        type_pkt = event_type[1]
         # cumulate statistics
         self.data.dep += 1
         self.data.ut += self.users*(time-self.data.oldT)
@@ -187,12 +186,12 @@ class Queue:
 
         self.data.oldT = time
         
-        if len(queue) > 0:
-            # get the first element from the queue
-            client = queue.pop(0)
+        if len(self.queue) > 0:
+            # get the first element from the self.queue
+            client = self.queue.pop(0)
 
             # Make its server idle
-            self.servers.makeIdle(serv_id)
+            #self.servers.makeIdle(serv_id) #TODO: comment for serv_id
 
             if self.n_server is not None:
                 # Update cumulative server busy time
@@ -200,8 +199,9 @@ class Queue:
                 # Add to the cumulative time the time difference between now (service end)
                 # and the beginning of the service
                 # print(data.serv_busy[serv_id]['cumulative_time'])
-                self.data.serv_busy[serv_id]['cumulative_time'] += (time - self.data.serv_busy[serv_id]['begin_last_service'])
-            
+                #self.data.serv_busy[serv_id]['cumulative_time'] += (time - self.data.serv_busy[serv_id]['begin_last_service'])
+                #TODO: pass per evitare serv_id
+                pass
             # do whatever we need to do when clients go away
             
             self.data.delay += (time-client.arrival_time)
@@ -227,7 +227,7 @@ class Queue:
             service_time, new_serv_id = self.servers.evalServTime(type="constant")
             self.data.servicesList.append(service_time)
 
-            new_served = queue[0]
+            new_served = self.queue[0]
 
             self.data.waitingDelaysList.append(time-new_served.arrival_time)
             self.data.waitingDelaysList_no_zeros.append(time-new_served.arrival_time)
