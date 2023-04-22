@@ -7,7 +7,7 @@ from sub.client import Client
 from sub.server import Server
 
 class Queue:
-    def __init__(self, serv_t, arr_t, queue_len, n_server, event_names):
+    def __init__(self, serv_t, arr_t, queue_len, n_server, event_names, fract = 0.5):
         """
         Queue
         ---
@@ -34,12 +34,14 @@ class Queue:
         self.arr_name = event_names[0]
         self.dep_name = event_names[1]
 
-        self.propagation_time = 0.2         # TODO: set proper value
+        self.propagation_time = 0.2         # TODO: set proper value / Cosa è questo? Non abbiamo già definito tx_delay?? 
 
         self.data = Measure(0,0,0,0,0,0, n_server)
         
         self.queue = []
+        self.users = len(self.queue)
         self.servers = Server(n_server, serv_t)
+        self.fract = fract
         
     
     def addClient(self, time, FES, event_type):
@@ -47,18 +49,15 @@ class Queue:
         Decide whether the user can be added.
         Need to look at the QUEUE_LEN parameter.
         This subroutine is called by the 'arrival' method.
-        """
-        
-        global users                # TODO: remove it
-        
+        """        
         #serv_id = event_type[1][1] ---> Removed - the Queue object needs to evaluate the next server
 
         pkt_type = event_type[1][1]
         if self.queue_len is not None:
             # Limited length
-            if users < self.queue_len:
-                users += 1
-                self.data.n_usr_t.append((users, time))
+            if self.users < self.queue_len:
+                self.users += 1
+                self.data.n_usr_t.append((self.users, time))
                 # create a record for the client
                 client = Client(pkt_type,time)
                 # insert the record in the queue
@@ -68,7 +67,7 @@ class Queue:
                 # new client can directly be served
                 # It may also be that the number of servers is unlimited 
                 # (new client always finds a server)
-                if self.n_server is None or users<=self.n_server:
+                if self.n_server is None or self.users<=self.n_server:
                     # Choose the next server
                     serv_id = self.servers.chooseNextServer()
 
@@ -95,8 +94,8 @@ class Queue:
                 self.data.countLosses += 1
         else:
             # Unlimited length
-            users += 1
-            self.data.n_usr_t.append((users, time))
+            self.users += 1
+            self.data.n_usr_t.append((self.users, time))
 
             # create a record for the client
             client = Client(pkt_type, time)
@@ -106,7 +105,7 @@ class Queue:
 
             # If there are less clients than servers, it means that the 
             # new client can directly be served
-            if self.n_server is None or users<=self.n_server:
+            if self.n_server is None or self.users<=self.n_server:
 
                 # sample the service time
                 service_time, serv_id = self.servers.evalServTime(type="constant")
@@ -142,16 +141,12 @@ class Queue:
         - queue: (list) containing all users which are currently inside the 
         system (both waiting and being served).
         """
-        global users
-        
-        assert (len(self.queue) == users), "The len of the queue and number of clients don't match"
 
-        #print("Arrival no. ",data.arr+1," at time ",time," with ",users," users" )
         
         # cumulate statistics
         self.data.arr += 1
-        self.data.ut += users*(time-self.data.oldT)
-        self.data.avgBuffer += max(0, users - self.n_server)*(time-self.data.oldT)
+        self.data.ut += self.users*(time-self.data.oldT)
+        self.data.avgBuffer += max(0, self.users - self.n_server)*(time-self.data.oldT)
         self.data.oldT = time
 
         # sample the time until the next event
@@ -159,7 +154,7 @@ class Queue:
         self.data.arrivalsList.append(inter_arrival)
         
         # schedule the next arrival
-        FES.put((time + inter_arrival, [self.arr_name]))
+        FES.put((time + inter_arrival, [self.arr_name, self.rand_pkt_type()]))
 
         ################################
         self.addClient(time, FES, event_type)
@@ -181,15 +176,14 @@ class Queue:
         - queue: (list) containing all users which are currently inside the 
         system (both waiting and being served).
         """
-        global users
 
         #print("Departure no. ",data.dep+1," at time ",time," with ",users," users" )
         serv_id = event_type[1][1]
         type_pkt = event_type[1][2]
         # cumulate statistics
         self.data.dep += 1
-        self.data.ut += users*(time-self.data.oldT)
-        self.data.avgBuffer += max(0, users - self.n_server)*(time-self.data.oldT)
+        self.data.ut += self.users*(time-self.data.oldT)
+        self.data.avgBuffer += max(0, self.users - self.n_server)*(time-self.data.oldT)
 
         self.data.oldT = time
         
@@ -212,8 +206,8 @@ class Queue:
             
             self.data.delay += (time-client.arrival_time)
             self.data.delaysList.append(time-client.arrival_time)
-            users -= 1
-            self.data.n_usr_t.append((users, time))
+            self.users -= 1
+            self.data.n_usr_t.append((self.users, time))
         
         # Update time
         self.data.oldT = time
@@ -222,9 +216,9 @@ class Queue:
 
         # See whether there are more clients in the line
         if self.n_server is not None:
-            if users >= self.n_server:
+            if self.users >= self.n_server:
                 can_add = True
-        elif users > 0:
+        elif self.users > 0:
             can_add = True
 
         ########## SERVE ANOTHER CLIENT #############
@@ -246,4 +240,10 @@ class Queue:
                 # Update the beginning of the service
                 self.data.serv_busy[new_serv_id]['begin_last_service'] = time
 
+    def rand_pkt_type(self):
+        if(random.uniform(0, 1) < self.fract):
+            type_pkt = "B"
+        else:
+            type_pkt = "A"
+        return type_pkt
         

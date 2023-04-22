@@ -43,13 +43,25 @@ def run(sim_time, tx_delay, fract):
     """
     FES = PriorityQueue()
 
-    MDC = MicroDataCenter()
-    CDC = CloudDataCenter()
+    MDC = MicroDataCenter(
+        serv_t = 2.0,
+        arr_t= 3.0, 
+        queue_len=10, 
+        n_server=1, 
+        event_names=["arrival_micro", "departure_micro"])
     
-    if(random.uniform(0, 1) < fract):
-        type_pkt = "B"
-    else:
-        type_pkt = "A"
+    CDC = CloudDataCenter(
+        serv_t = 2.0, 
+        arr_t= 3.0, 
+        queue_len=10, 
+        n_server=1, 
+        event_names=["arrival_cloud", "departure_cloud"])
+    
+    # pick at random the first packet givent the fraction
+    type_pkt = MDC.rand_pkt_type()
+    
+    # Simulation time 
+    time = 0
 
     FES.put((0, ["arrival_micro", type_pkt]))
 
@@ -60,13 +72,16 @@ def run(sim_time, tx_delay, fract):
             MDC.arrival(time, FES, event_type)
 
         elif event_type[0] == "arrival_cloud":
-            CDC.arrival(time, FES, event_type)
+            CDC.arrival(time, FES, event_type, MDC)
 
         elif event_type[0] == "departure_micro":
-            MDC.departure(time, FES, event_type, tx_delay)
+            MDC.departure(time, FES, event_type, tx_delay, CDC)
         
         elif event_type[0] == "departure_cloud":
             CDC.departure(time, FES, event_type)
 
 if __name__ == "__main__":
-    run()
+    sim_time = 500000
+    tx_delay = 0.5
+    fract= 0.5
+    run(sim_time, tx_delay, fract)

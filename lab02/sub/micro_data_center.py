@@ -1,7 +1,7 @@
-from server import Server
-from client import Client
+from sub.server import Server
+from sub.client import Client
 
-from queue import Queue
+from sub.queue import Queue
 
 import random
 
@@ -13,18 +13,13 @@ class MicroDataCenter(Queue):
     This class inherits all methods from the `Queue' class and overrides some of them.
     """
 
-    # def __init__(self):
-    #     pass
-
-    # TODO
-
     def departure(self, time, FES, event_type, tx_delay, cloud_class):
         
-        type_pkt = event_type[1][1]
+        type_pkt = event_type[1]
         # cumulate statistics
         self.data.dep += 1
-        self.data.ut += users*(time-self.data.oldT)
-        self.data.avgBuffer += max(0, users - self.n_server)*(time-self.data.oldT)
+        self.data.ut += self.users*(time-self.data.oldT)
+        self.data.avgBuffer += max(0, self.users - self.n_server)*(time-self.data.oldT)
 
         self.data.oldT = time
         
@@ -51,8 +46,8 @@ class MicroDataCenter(Queue):
             
             self.data.delay += (time-client.arrival_time)
             self.data.delaysList.append(time-client.arrival_time)
-            users -= 1
-            self.data.n_usr_t.append((users, time))
+            self.users -= 1
+            self.data.n_usr_t.append((self.users, time))
         
         # Update time
         self.data.oldT = time
@@ -61,9 +56,9 @@ class MicroDataCenter(Queue):
 
         # See whether there are more clients in the line
         if self.n_server is not None:
-            if users >= self.n_server:
+            if self.users >= self.n_server:
                 can_add = True
-        elif users > 0:
+        elif self.users > 0:
             can_add = True
 
         ########## SERVE ANOTHER CLIENT #############
@@ -78,7 +73,7 @@ class MicroDataCenter(Queue):
             self.data.waitingDelaysList_no_zeros.append(time-new_served.arrival_time)
 
             # Schedule when the service will end
-            FES.put((time + service_time, ["departure", new_serv_id]))
+            FES.put((time + service_time, [self.dep_name, new_served.type]))
             self.servers.makeBusy(new_serv_id)
 
             if self.n_server is not None:
@@ -89,7 +84,7 @@ class MicroDataCenter(Queue):
     # def arrival(self, time, FES, event_type):
     #     Queue.arrival()
 
-    def addClient(self, time, FES, pkt_type):
+    def addClient(self, time, FES, event_type):
         """
         addClient
         ---
@@ -98,26 +93,24 @@ class MicroDataCenter(Queue):
         If not, forward it to the cloud data center.
         """
         # Need to specify policy for 'lost' packets!
-        
-        # TODO: what to do with these globals?
-        global users
+        pkt_type = event_type[1]
 
         if self.queue_len is not None:
             # Limited length ------------- Only case for this lab
 
-            if users < self.queue_len:
-                users += 1
-                self.data.n_usr_t.append((users, time))
+            if self.users < self.queue_len:
+                self.users += 1
+                self.data.n_usr_t.append((self.users, time))
                 # create a record for the client
                 client = Client(pkt_type, time)
                 # insert the record in the self.queue
-                self.self.queue.append(client)
+                self.queue.append(client)
                 
                 # If there are less clients than servers, it means that the 
                 # new client can directly be served
                 # It may also be that the number of servers is unlimited 
                 # (new client always finds a server)
-                if self.n_server is None or users<=self.n_server:
+                if self.n_server is None or self.users<=self.n_server:
 
                     # sample the service time
                     service_time, serv_id = self.servers.evalServTime(type="constant")
@@ -125,7 +118,7 @@ class MicroDataCenter(Queue):
                     #service_time = 1 + random.uniform(0, SEVICE_TIME)
 
                     # schedule when the client will finish the server
-                    FES.put((time + service_time, ["departure_micro", serv_id]))
+                    FES.put((time + service_time, [self.dep_name, client.type]))
                     self.servers.makeBusy(serv_id)
                     
                     if self.n_server is not None:
@@ -134,7 +127,7 @@ class MicroDataCenter(Queue):
 
                     # Update the waiting time for the client which starts to be served straight away
                     # Get the client - not extracting:
-                    cli = self.self.queue[0]
+                    cli = self.queue[0]
                     self.data.waitingDelaysList.append(time - cli.arrival_time)
 
             else:
@@ -146,22 +139,22 @@ class MicroDataCenter(Queue):
                 # Scedule arrival into cloud data center
                 # It will happen after a fixed propagation time
                 arr_time_cloud = time + self.propagation_time
-                FES.put((arr_time_cloud, ["arrival_cloud"]))
+                FES.put((arr_time_cloud, ["arrival_cloud", client.type]))
 
         else:
             # Unlimited length
-            users += 1
-            self.data.n_usr_t.append((users, time))
+            self.users += 1
+            self.data.n_usr_t.append((self.users, time))
 
             # create a record for the client
             client = Client(pkt_type, time)
 
             # insert the record in the self.queue
-            self.self.queue.append(client)
+            self.queue.append(client)
 
             # If there are less clients than servers, it means that the 
             # new client can directly be served
-            if self.n_server is None or users<=self.n_server:
+            if self.n_server is None or self.users<=self.n_server:
 
                 # sample the service time
                 service_time, serv_id = self.servers.evalServTime(type="constant")
@@ -169,7 +162,7 @@ class MicroDataCenter(Queue):
                 #service_time = 1 + random.uniform(0, SEVICE_TIME)
 
                 # schedule when the client will finish the server
-                FES.put((time + service_time, ["departure", serv_id]))
+                FES.put((time + service_time, [self.dep_name, client.type]))
                 self.servers.makeBusy(serv_id)
 
                 if self.n_server is not None:
@@ -178,7 +171,7 @@ class MicroDataCenter(Queue):
                 
                 # Update the waiting time for the client which starts to be served straight away
                 # Get the client - not extracting:
-                cli = self.self.queue[0]
+                cli = self.queue[0]
                 self.data.waitingDelaysList.append(time - cli.arrival_time)
 
     def run(self):
