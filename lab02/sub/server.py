@@ -131,7 +131,7 @@ class Server(object):
             > uniform: uniform in (0, 2/serv_rate) of current server
         """
         # Update 
-        #self.chooseNextServer() #TODO: commentato per far funzionare
+        self.chooseNextServer() 
 
         if type == "expovariate":
             service_time = random.expovariate(self.serv_rates[self.current])

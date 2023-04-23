@@ -16,6 +16,7 @@ class MicroDataCenter(Queue):
     def departure(self, time, FES, event_type, tx_delay, cloud_class):
         
         type_pkt = event_type[1]
+        serv_id = event_type[2]
         # cumulate statistics
         self.data.dep += 1
         self.data.ut += self.users*(time-self.data.oldT)
@@ -32,16 +33,16 @@ class MicroDataCenter(Queue):
             else:
                 # print something?
                 pass
-            """
+            
             # Make its server idle
-            serv.makeIdle(serv_id)
+            self.servers.makeIdle(serv_id)
             if self.n_server is not None:
                 # Update cumulative server busy time
                 
                 # Add to the cumulative time the time difference between now (service end)
                 # and the beginning of the service
                 # print(data.serv_busy['cumulative_time'])
-                self.data.serv_busy[serv_id]['cumulative_time'] += (time - self.data.serv_busy['begin_last_service']) """
+                self.data.serv_busy[serv_id]['cumulative_time'] += (time - self.data.serv_busy[serv_id]['begin_last_service'])
                 
             # do whatever we need to do when clients go away
             
@@ -65,7 +66,7 @@ class MicroDataCenter(Queue):
         ########## SERVE ANOTHER CLIENT #############
         if can_add:
             # Sample the service time
-            service_time, new_serv_id = self.servers.evalServTime(type="constant")
+            service_time, new_serv_id = self.servers.evalServTime(type="expovariate")
             self.data.servicesList.append(service_time)
 
             new_served = self.queue[0]
@@ -74,7 +75,7 @@ class MicroDataCenter(Queue):
             self.data.waitingDelaysList_no_zeros.append(time-new_served.arrival_time)
 
             # Schedule when the service will end
-            FES.put((time + service_time, [self.dep_name, new_served.type]))
+            FES.put((time + service_time, [self.dep_name, new_served.type, new_serv_id]))
             self.servers.makeBusy(new_serv_id)
 
             if self.n_server is not None:
@@ -114,12 +115,12 @@ class MicroDataCenter(Queue):
                 if self.n_server is None or self.users<=self.n_server:
 
                     # sample the service time
-                    service_time, serv_id = self.servers.evalServTime(type="constant")
+                    service_time, serv_id = self.servers.evalServTime(type="expovariate")
                     self.data.servicesList.append(service_time)
                     #service_time = 1 + random.uniform(0, SEVICE_TIME)
 
                     # schedule when the client will finish the server
-                    FES.put((time + service_time, [self.dep_name, client.type]))
+                    FES.put((time + service_time, [self.dep_name, client.type, serv_id]))
                     self.servers.makeBusy(serv_id)
                     
                     if self.n_server is not None:
@@ -140,7 +141,7 @@ class MicroDataCenter(Queue):
                 # Scedule arrival into cloud data center
                 # It will happen after a fixed propagation time
                 arr_time_cloud = time + self.propagation_time
-                FES.put((arr_time_cloud, ["arrival_cloud", client.type]))
+                FES.put((arr_time_cloud, ["arrival_cloud", pkt_type]))
 
         else:
             # Unlimited length
@@ -158,12 +159,12 @@ class MicroDataCenter(Queue):
             if self.n_server is None or self.users<=self.n_server:
 
                 # sample the service time
-                service_time, serv_id = self.servers.evalServTime(type="constant")
+                service_time, serv_id = self.servers.evalServTime(type="expovariate")
                 self.data.servicesList.append(service_time)
                 #service_time = 1 + random.uniform(0, SEVICE_TIME)
 
                 # schedule when the client will finish the server
-                FES.put((time + service_time, [self.dep_name, client.type]))
+                FES.put((time + service_time, [self.dep_name, client.type, serv_id]))
                 self.servers.makeBusy(serv_id)
 
                 if self.n_server is not None:

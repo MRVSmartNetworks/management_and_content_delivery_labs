@@ -69,15 +69,15 @@ class Queue:
                 # (new client always finds a server)
                 if self.n_server is None or self.users<=self.n_server:
                     # Choose the next server
-                    serv_id = self.servers.chooseNextServer()
+                    #serv_id = self.servers.chooseNextServer() #TODO: perchè è qui?
 
                     # sample the service time
-                    service_time, serv_id = self.servers.evalServTime(type="constant")
+                    service_time, serv_id = self.servers.evalServTime(type="expovariate") # at the start was constant
                     self.data.servicesList.append(service_time)
                     #service_time = 1 + random.uniform(0, SEVICE_TIME)
 
                     # schedule when the client will finish the server
-                    FES.put((time + service_time, [self.dep_name, client.type]))
+                    FES.put((time + service_time, [self.dep_name, client.type, serv_id]))
                     self.servers.makeBusy(serv_id)
                     
                     if self.n_server is not None:
@@ -108,12 +108,12 @@ class Queue:
             if self.n_server is None or self.users<=self.n_server:
 
                 # sample the service time
-                service_time, serv_id = self.servers.evalServTime(type="constant")
+                service_time, serv_id = self.servers.evalServTime(type="expovariate") # at the start was constant
                 self.data.servicesList.append(service_time)
                 #service_time = 1 + random.uniform(0, SEVICE_TIME)
 
                 # schedule when the client will finish the server
-                FES.put((time + service_time, [self.dep_name, client.type]))
+                FES.put((time + service_time, [self.dep_name, client.type, serv_id]))
                 self.servers.makeBusy(serv_id)
 
                 if self.n_server is not None:
@@ -179,6 +179,7 @@ class Queue:
 
         #print("Departure no. ",data.dep+1," at time ",time," with ",users," users" )
         type_pkt = event_type[1]
+        serv_id = event_type[2]
         # cumulate statistics
         self.data.dep += 1
         self.data.ut += self.users*(time-self.data.oldT)
@@ -191,7 +192,7 @@ class Queue:
             client = self.queue.pop(0)
 
             # Make its server idle
-            #self.servers.makeIdle(serv_id) #TODO: comment for serv_id
+            self.servers.makeIdle(serv_id)
 
             if self.n_server is not None:
                 # Update cumulative server busy time
@@ -199,9 +200,7 @@ class Queue:
                 # Add to the cumulative time the time difference between now (service end)
                 # and the beginning of the service
                 # print(data.serv_busy[serv_id]['cumulative_time'])
-                #self.data.serv_busy[serv_id]['cumulative_time'] += (time - self.data.serv_busy[serv_id]['begin_last_service'])
-                #TODO: pass per evitare serv_id
-                pass
+                self.data.serv_busy[serv_id]['cumulative_time'] += (time - self.data.serv_busy[serv_id]['begin_last_service'])
             # do whatever we need to do when clients go away
             
             self.data.delay += (time-client.arrival_time)
@@ -224,7 +223,7 @@ class Queue:
         ########## SERVE ANOTHER CLIENT #############
         if can_add:
             # Sample the service time
-            service_time, new_serv_id = self.servers.evalServTime(type="constant")
+            service_time, new_serv_id = self.servers.evalServTime(type="expovariate") # at the start was constant
             self.data.servicesList.append(service_time)
 
             new_served = self.queue[0]
@@ -233,7 +232,7 @@ class Queue:
             self.data.waitingDelaysList_no_zeros.append(time-new_served.arrival_time)
 
             # Schedule when the service will end
-            FES.put((time + service_time, [self.dep_name, new_serv_id]))
+            FES.put((time + service_time, [self.dep_name, new_served.type,new_serv_id]))
             self.servers.makeBusy(new_serv_id)
 
             if self.n_server is not None:

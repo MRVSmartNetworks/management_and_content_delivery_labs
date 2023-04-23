@@ -44,16 +44,16 @@ def run(sim_time, tx_delay, fract):
     FES = PriorityQueue()
 
     MDC = MicroDataCenter(
-        serv_t = 2.0,
-        arr_t= 3.0, 
+        serv_t = 3.0,
+        arr_t= 10.0, 
         queue_len=10, 
         n_server=1, 
         event_names=["arrival_micro", "departure_micro"])
     
     CDC = CloudDataCenter(
-        serv_t = 2.0, 
-        arr_t= 3.0, 
-        queue_len=10, 
+        serv_t = 5.0, 
+        arr_t= 10.0, 
+        queue_len=20, 
         n_server=1, 
         event_names=["arrival_cloud", "departure_cloud"])
     
@@ -63,7 +63,7 @@ def run(sim_time, tx_delay, fract):
     # Simulation time 
     time = 0
 
-    FES.put((0, ["arrival_micro", type_pkt]))
+    FES.put((0, ["arrival_micro", type_pkt, 0]))
 
     while time < sim_time:
         (time, event_type) = FES.get()
