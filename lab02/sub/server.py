@@ -112,6 +112,8 @@ class Server(object):
             # No need to keep counter if infinite n. of servers - leave it 0
             self.current = 0
 
+        return self.current
+
     # ******************************************************************************
     # Public
 
@@ -129,7 +131,7 @@ class Server(object):
             > uniform: uniform in (0, 2/serv_rate) of current server
         """
         # Update 
-        self.chooseNextServer()
+        self.chooseNextServer() 
 
         if type == "expovariate":
             service_time = random.expovariate(self.serv_rates[self.current])
@@ -145,7 +147,7 @@ class Server(object):
             raise ValueError(f"Invalid distribution type '{type}'!")
         
         return service_time, self.current
-    
+
     def makeIdle(self, serv_id):
         """
         Change the state of server 'serv_id' from busy to idle.
@@ -163,8 +165,6 @@ class Server(object):
             pass
         else:
             raise ValueError(f"The provided ID {serv_id} exceeds the maximum number of servers {self.n_servers}")
-
-
 
     def makeBusy(self, serv_id):
         """
