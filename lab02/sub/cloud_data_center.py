@@ -8,7 +8,7 @@ import random
 
 class CloudDataCenter(Queue):
     
-    def arrival(self, time, FES, event_type, micro_class):
+    def arrival(self, time, FES, event_type):
         """
         arrival
         ---
@@ -35,8 +35,8 @@ class CloudDataCenter(Queue):
         inter_arrival = random.expovariate(lambd=1.0/self.arr_t)
         self.data.arrivalsList.append(inter_arrival)
         
-        # schedule the next arrival
-        FES.put((time + inter_arrival, [micro_class.arr_name, self.rand_pkt_type()]))
+        # schedule the next arrival - - - - NOTE: not needed here, it is already done by the arrival
+        # FES.put((time + inter_arrival, ["arrival_micro", self.rand_pkt_type()]))
 
         ################################
         self.addClient(time, FES, event_type)

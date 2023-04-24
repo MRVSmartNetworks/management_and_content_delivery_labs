@@ -9,11 +9,20 @@ import random
 class MicroDataCenter(Queue):
     """
     MicroDataCenter
+    ---
+    Class used to model the Micro Data Center.
+    It handles packets of types A and B, according to different policies:
+    
+    - Packets 'A' - High priority: time-sensitive tasks, which require to be executed 
+    at edge level; once they are processed by the M.D.C., these packets are 
+    immediately sent to the actuators.
+    - Packets 'B' - Low priority: time-insentitive tasks, which have to go through
+    both processing at Micro Data Center and at Cloud Data Center
 
     This class inherits all methods from the `Queue' class and overrides some of them.
     """
 
-    def departure(self, time, FES, event_type, tx_delay, cloud_class):
+    def departure(self, time, FES, event_type, tx_delay):
         
         type_pkt = event_type[1]
         serv_id = event_type[2]
@@ -29,8 +38,9 @@ class MicroDataCenter(Queue):
             client = self.queue.pop(0)
 
             if type_pkt == "B":
-                FES.put((time + tx_delay, [cloud_class.arr_name, client.type]))
+                FES.put((time + tx_delay, ["arrival_cloud", client.type]))
             else:
+                # Going to actuator
                 # print something?
                 pass
             
@@ -175,7 +185,3 @@ class MicroDataCenter(Queue):
                 # Get the client - not extracting:
                 cli = self.queue[0]
                 self.data.waitingDelaysList.append(time - cli.arrival_time)
-
-    def run(self):
-        # Not needed probably - all the things are done by the events themselves
-        pass
