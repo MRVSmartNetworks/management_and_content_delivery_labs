@@ -22,7 +22,7 @@ class MicroDataCenter(Queue):
     This class inherits all methods from the `Queue' class and overrides some of them.
     """
 
-    def departure(self, time, FES, event_type, tx_delay):
+    def departure(self, time, FES, event_type):
         
         type_pkt = event_type[1]
         serv_id = event_type[2]
@@ -38,7 +38,7 @@ class MicroDataCenter(Queue):
             client = self.queue.pop(0)
 
             if type_pkt == "B":
-                FES.put((time + tx_delay, ["arrival_cloud", client.type]))
+                FES.put((time + self.propagation_time, ["arrival_cloud", client.type]))
             else:
                 # Going to actuator
                 # print something?
@@ -55,7 +55,8 @@ class MicroDataCenter(Queue):
                 self.data.serv_busy[serv_id]['cumulative_time'] += (time - self.data.serv_busy[serv_id]['begin_last_service'])
                 
             # do whatever we need to do when clients go away
-            
+            if client.type == "A":
+                self.data.delay_A += (time-client.arrival_time) 
             self.data.delay += (time-client.arrival_time)
             self.data.delaysList.append(time-client.arrival_time)
             self.users -= 1
