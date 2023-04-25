@@ -183,7 +183,9 @@ class Measure:
 
     def waitingDelayHist(self, zeros=False, mean_value=False, img_name=None):
         """
-        Plot the histogram of the queuing delay values
+        waitingDelayHist
+        ---
+        Plot the histogram of the queuing delay values.
 
         Parameters:
         - zeros: if true, plot the distribution taking into account elements which do 

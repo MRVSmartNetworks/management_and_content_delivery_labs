@@ -11,9 +11,11 @@ class Queue:
         """
         Queue
         ---
-        Class used to model queuing systems.
+        Class used to model M/G/s/n queuing systems (Poisson inter-arrival times, generic service 
+        times, variable number of servers and variable queue lenght).
 
-        Input parameters:
+
+        ### Input parameters
         - serv_t: average service time (1/serv_rate)
         - arr_t: average inter-arrival time (1/arr_rate)
         - queue_len: maximum queue length (if None then infinite queue)
@@ -22,25 +24,38 @@ class Queue:
         - event_names: list containing 2 elements - 1st one is the name assigned to the arrivals, 
         2nd one is the one assigned to the departure
 
-        Attributes:
-        - TODO
+        ### Attributes
+        - serv_t: average service time
+        - arr_t: average arrival time
+        - n_server: number of servers
+        - queue_len: length of the queue (max. number of clients) - NOTE: it cannot be less 
+        than the n. of servers
+        - arr_name: name given to the arrival of the specific queue
+        - dep_name: name given to the departure of the specific queue
+        - data: 'Measure' class object, used to make and store KPI
+        - queue: list containing current users
+        - users: variable tracking the length of the queue
+        - servers: 'Server' class object, containing the server(s) and allowing to use them
+        - types: list of valid packet types
+        - fract: fraction of elements of class self.types[1] - assuming 2 types...
         """
 
         self.serv_t = serv_t
         self.arr_t = arr_t
-        self.queue_len = queue_len 
         self.n_server = n_server
+        self.queue_len = max(queue_len, n_server)       # Used to force 'valid' queues (cannot have queue with less places than total servers)
 
         self.arr_name = event_names[0]
         self.dep_name = event_names[1]
-
-        self.propagation_time = 0.2         # TODO: set proper value / Cosa è questo? Non abbiamo già definito tx_delay?? 
 
         self.data = Measure(0,0,0,0,0,0, n_server)
         
         self.queue = []
         self.users = len(self.queue)
         self.servers = Server(n_server, serv_t)
+
+        self.types = ["A", "B"]
+
         self.fract = fract
         
     
@@ -69,7 +84,7 @@ class Queue:
                 # (new client always finds a server)
                 if self.n_server is None or self.users<=self.n_server:
                     # Choose the next server
-                    #serv_id = self.servers.chooseNextServer() #TODO: perchè è qui?
+                    # serv_id = self.servers.chooseNextServer()             # NOTE: Not needed in this lab - all servers have same capabilities
 
                     # sample the service time
                     service_time, serv_id = self.servers.evalServTime(type="expovariate") # at the start was constant
@@ -133,6 +148,8 @@ class Queue:
         Perform operations needed at arrival.
         In particular, the new user is added to the queuing 
         system and the measurements are updated.
+
+        The method also schedules the next arrival in the queue.
         
         Input parameters:
         - time: current time, extracted from the event in the FES.
@@ -141,7 +158,6 @@ class Queue:
         - queue: (list) containing all users which are currently inside the 
         system (both waiting and being served).
         """
-
         
         # cumulate statistics
         self.data.arr += 1
@@ -239,8 +255,28 @@ class Queue:
                 # Update the beginning of the service
                 self.data.serv_busy[new_serv_id]['begin_last_service'] = time
 
-    def rand_pkt_type(self):
-        if(random.uniform(0, 1) < self.fract):
+    def rand_pkt_type(self, fract=None):
+        """
+        rand_pkt_type
+        ---
+        Choose randomly between the 2 packet types supported ('A', 'B').
+
+        The user can either supply his own fraction or use the attribute 
+        (given at initialization).
+
+        ### Input parameters
+        - fract (default None): it is the fraction of 'B' packets over 
+        the total.
+
+        ### Output parameters
+        - type_pkt: extracted type.
+        """
+        if fract is not None:
+            used_fract = fract
+        else:
+            used_fract = self.fract
+
+        if(random.uniform(0, 1) < used_fract):
             type_pkt = "B"
         else:
             type_pkt = "A"
