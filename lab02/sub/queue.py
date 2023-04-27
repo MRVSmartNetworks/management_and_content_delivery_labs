@@ -57,8 +57,9 @@ class Queue:
         self.types = ["A", "B"]
 
         self.fract = fract
-        
-    
+
+        self.propagation_time = 0.2 # transimssion delay between MicroDataCenter and CloudDataCenter
+
     def addClient(self, time, FES, event_type):
         """
         Decide whether the user can be added.
@@ -218,7 +219,8 @@ class Queue:
                 # print(data.serv_busy[serv_id]['cumulative_time'])
                 self.data.serv_busy[serv_id]['cumulative_time'] += (time - self.data.serv_busy[serv_id]['begin_last_service'])
             # do whatever we need to do when clients go away
-            
+            if client.type == "A":
+                self.data.delay_A += (time-client.arrival_time) 
             self.data.delay += (time-client.arrival_time)
             self.data.delaysList.append(time-client.arrival_time)
             self.users -= 1

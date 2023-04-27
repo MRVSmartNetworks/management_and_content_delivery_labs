@@ -70,36 +70,35 @@ def printResults(sim_time, mdc, cdc, plots=False):
 
     # Task 2. Analysis of the micro data center buffer size impact on 
     # the performance
-    out_dict = {}
+    #out_dict = {}
     # Count losses of MDC:
-    out_dict["losses_MDC"]
+    #out_dict["losses_MDC"]
 
     
-    return 1
+    return cdc.data, mdc.data
 
-def run(sim_time, tx_delay, fract, q1_len=20, q2_len=10, results=False, plots=False):
+def run(sim_time, fract, serv_t_1=3.0, q1_len=20, n_serv_1 = 1, serv_t_2 = 5.0, q2_len=10,n_serv_2 = 1, results=False, plots=False):
     """ 
     Run
     ---
     Paramaters:
         - sim_time: simulation time 
-        - tx_delay: transimssion delay between MicroDataCenter and CloudDataCenter
         - fract: fraction of packets of type B
     """
     FES = PriorityQueue()
 
     MDC = MicroDataCenter(
-        serv_t=3.0,
+        serv_t=serv_t_1,
         arr_t=10.0, 
         queue_len=q1_len, 
-        n_server=1, 
+        n_server=n_serv_1, 
         event_names=["arrival_micro", "departure_micro"])
     
     CDC = CloudDataCenter(
-        serv_t=5.0, 
+        serv_t=serv_t_2, 
         arr_t=10.0, 
         queue_len=q2_len, 
-        n_server=1, 
+        n_server=n_serv_2, 
         event_names=["arrival_cloud", "departure_cloud"])
     
     # Pick at random the first packet given the fraction of B
@@ -115,7 +114,7 @@ def run(sim_time, tx_delay, fract, q1_len=20, q2_len=10, results=False, plots=Fa
         (time, event_type) = FES.get()
         # b = tm.time()
         # print(f"Time to extract last: {b-a}")
-        print(f"Current time: {time} - event: {event_type}")
+        #print(f"Current time: {time} - event: {event_type}")
 
         # tm.sleep(2)
 
@@ -126,7 +125,7 @@ def run(sim_time, tx_delay, fract, q1_len=20, q2_len=10, results=False, plots=Fa
             CDC.arrival(time, FES, event_type)
 
         elif event_type[0] == "departure_micro":
-            MDC.departure(time, FES, event_type, tx_delay)
+            MDC.departure(time, FES, event_type)
         
         elif event_type[0] == "departure_cloud":
             CDC.departure(time, FES, event_type)
@@ -144,9 +143,8 @@ if __name__ == "__main__":
     random.seed(1)
     
     sim_time = 50000
-    tx_delay = 0.5
     fract = 0.5
-    run(sim_time, tx_delay, fract, plots=True)
+    run(sim_time, fract, results=True)
 
     ###########################
     do_iter = False
@@ -162,4 +160,25 @@ if __name__ == "__main__":
 
         for i in range(n_iter):
             random.seed(seeds[i])
-            tmp_res.append(run(sim_time, tx_delay, fract))
+            tmp_res.append(run(sim_time, fract))
+    
+    # Task.3 Analysis on packets A average time in the system
+    # Threshold T_q to set desired max average time 
+    T_q = 10
+    if T_q is not None:
+        # a) Find min serv rate to reduce delay A below T_q
+        serv_t_list = np.arange(8, 7, -0.2)
+        for serv_t in serv_t_list:
+            res_cdc, res_mdc = run(sim_time, fract, serv_t_1=serv_t, results=True)
+            delay_A = (res_cdc.delay_A + res_mdc.delay_A)/(res_cdc.dep + res_mdc.dep)
+            if delay_A < T_q:
+                print(f"\nMinimum service rate is {serv_t}")
+                break
+        # a) Find min no. of edge nodes to reduce delay A below T_q
+        n_serv_list = range(1, 5)
+        for n_serv in n_serv_list:
+            res_cdc, res_mdc = run(sim_time, fract, serv_t_1=serv_t, results=True)
+            delay_A = (res_cdc.delay_A + res_mdc.delay_A)/(res_cdc.dep + res_mdc.dep)
+            if delay_A < T_q:
+                print(f"\nMinimum no. of edges is {n_serv}")
+                break
