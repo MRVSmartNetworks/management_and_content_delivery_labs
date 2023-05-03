@@ -57,8 +57,16 @@ def printResults(sim_time, mdc, cdc, plots=False):
     """
     # Task 1(version A). Analysis of the waiting delay
     if plots:
-        cdc.data.waitingDelayHist(zeros=True, mean_value=False, img_name="./images/task1_waiting-delays-cdc.png")
-        cdc.data.waitingDelayHist(zeros=False, mean_value=True, img_name="./images/task1_waiting-delays-no-zeros-cdc.png")
+        cdc.data.waitingDelayHist(zeros=True, mean_value=False, img_name=None)
+        cdc.data.waitingDelayHist(zeros=False, mean_value=True, img_name=None)
+        mdc.data.plotUsrInTime()
+        
+        plt.figure(figsize=(8,4))
+        plt.plot(np.linspace(1,sim_time, len(mdc.data.arrivalsList)), mdc.queue)
+        plt.title("Number of arrival of the system")
+        plt.xlabel("Simulation time")
+        plt.ylabel("Inter arrival times of the packets")
+        plt.show()
     """ 
     Some observations on the plot (param: dep_micro: 3s, arr_micro: 10s, dep_cloud: 5s):
     - Very few bins (the method sets n_bins=sqrt(unique values)), which means that few elements 
@@ -73,12 +81,13 @@ def printResults(sim_time, mdc, cdc, plots=False):
     #out_dict = {}
     # Count losses of MDC:
     #out_dict["losses_MDC"]
-
     
     return cdc.data, mdc.data
 
-def run(sim_time, fract, serv_t_1=3.0, arr_t=10.0, 
-        q1_len=20, n_serv_1 = 1, serv_t_2 = 5.0, 
+    
+
+def run(sim_time, fract, serv_t_1=9.0, arr_t=10.0, 
+        q1_len=20, n_serv_1 = 1, serv_t_2 = 10.0, 
         q2_len=10,n_serv_2 = 1,results=False, plots=False):
     """ 
     Run
@@ -229,7 +238,7 @@ if __name__ == "__main__":
     # Task. 4 Analysis of the system with multi-server
     if multi_server:
         arrival_list = [10,6,2,8]
-        run(sim_time, fract, arr_t=arrival_list, n_serv_1 = 4, n_serv_2 = 4, results=True, plot=True)
+        run(sim_time, fract, arr_t=arrival_list, n_serv_1 = 4, n_serv_2 = 4, results=True, plots=True)
     
 
             
