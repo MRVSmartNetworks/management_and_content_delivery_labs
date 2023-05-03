@@ -71,7 +71,9 @@ class Server(object):
         # 'current' is used to track the choice of the next server
         # NOTE: if the n. of servers is infinite, the number 'current' will always stay 0 
         # (it is instantiated for simplicity)
+        
         self.current = 0
+        self.cost = self.serv_rates*10
 
     # ******************************************************************************
     # Private

@@ -167,6 +167,7 @@ class Queue:
         self.data.oldT = time
 
         # sample the time until the next event
+
         inter_arrival = random.expovariate(lambd=1.0/self.arr_t)
         self.data.arrivalsList.append(inter_arrival)
         

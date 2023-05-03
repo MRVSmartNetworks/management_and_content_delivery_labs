@@ -77,7 +77,9 @@ def printResults(sim_time, mdc, cdc, plots=False):
     
     return cdc.data, mdc.data
 
-def run(sim_time, fract, serv_t_1=3.0, q1_len=20, n_serv_1 = 1, serv_t_2 = 5.0, q2_len=10,n_serv_2 = 1, results=False, plots=False):
+def run(sim_time, fract, serv_t_1=3.0, arr_t=10.0, 
+        q1_len=20, n_serv_1 = 1, serv_t_2 = 5.0, 
+        q2_len=10,n_serv_2 = 1,results=False, plots=False):
     """ 
     Run
     ---
@@ -87,16 +89,22 @@ def run(sim_time, fract, serv_t_1=3.0, q1_len=20, n_serv_1 = 1, serv_t_2 = 5.0, 
     """
     FES = PriorityQueue()
 
+    # control if there are more service rate during the simulation
+    # and split the simulation proportionally to the no. of service
+    # rates
+        
+    
+
     MDC = MicroDataCenter(
         serv_t=serv_t_1,
-        arr_t=10.0, 
+        arr_t=arr_t, 
         queue_len=q1_len, 
         n_server=n_serv_1, 
         event_names=["arrival_micro", "departure_micro"])
     
     CDC = CloudDataCenter(
         serv_t=serv_t_2, 
-        arr_t=10.0, 
+        arr_t=None, 
         queue_len=q2_len, 
         n_server=n_serv_2, 
         event_names=["arrival_cloud", "departure_cloud"])
@@ -105,11 +113,18 @@ def run(sim_time, fract, serv_t_1=3.0, q1_len=20, n_serv_1 = 1, serv_t_2 = 5.0, 
     type_pkt = MDC.rand_pkt_type(fract)
     
     # Simulation time 
+    if isinstance(arr_t,list):
+        step_time = sim_time/len(arr_t)
+        step_app = step_time
+        i = 0
+        MDC.arr_t = arr_t[i]
+    else:
+        step_time = sim_time
     time = 0
 
     FES.put((0, ["arrival_micro", type_pkt, 0]))
-
-    while time < sim_time:
+    
+    while time < step_time:
         # a = tm.time()
         (time, event_type) = FES.get()
         # b = tm.time()
@@ -117,7 +132,7 @@ def run(sim_time, fract, serv_t_1=3.0, q1_len=20, n_serv_1 = 1, serv_t_2 = 5.0, 
         #print(f"Current time: {time} - event: {event_type}")
 
         # tm.sleep(2)
-
+        
         if event_type[0] == "arrival_micro":
             MDC.arrival(time, FES, event_type)
 
@@ -129,6 +144,11 @@ def run(sim_time, fract, serv_t_1=3.0, q1_len=20, n_serv_1 = 1, serv_t_2 = 5.0, 
         
         elif event_type[0] == "departure_cloud":
             CDC.departure(time, FES, event_type)
+        
+        if time > step_time and step_time < sim_time:   # check if the simulation is not finished
+            step_time += step_app
+            i += 1
+            MDC.arr_t = arr_t[i]
     
     if results or plots:
         # Might be used later for returning the results in multi-run simulations
@@ -148,6 +168,7 @@ if __name__ == "__main__":
 
     ###########################
     do_iter = False
+    multi_server = True
 
     if do_iter:
         # Iterations
@@ -164,7 +185,7 @@ if __name__ == "__main__":
     
     # Task.3 Analysis on packets A average time in the system
     # Threshold T_q to set desired max average time 
-    T_q = 10
+    T_q = None
     if T_q is not None:
         # a) Find min serv rate to reduce delay A below T_q
         serv_r_list = np.arange(0.1, 0.8, 0.1)
@@ -177,12 +198,13 @@ if __name__ == "__main__":
             if delay_A < T_q and not min_found:
                 print(f"\nMinimum service rate is {serv_r}")
                 min_found = True
+        plt.figure()
         plt.title("Min serv_r to reduce delay_A below T_q")
         plt.ylabel("delay_A")
         plt.xlabel("serv_rate")
         plt.axhline(T_q, linestyle='--')
         plt.plot(list(serv_r_list), delay_list)
-        plt.show()
+        
         # a) Find min no. of edge nodes to reduce delay A below T_q
         n_serv_list = range(1, 20)
         min_found = False
@@ -195,11 +217,20 @@ if __name__ == "__main__":
                 print(f"\nMinimum no. of edges is {n_serv}")
                 min_found = True
         
+        plt.figure()
         plt.title("Min n_serv to reduce delay_A below T_q")
         plt.xlabel("no. of servers")
         plt.ylabel("delay_A")
         plt.axhline(T_q, linestyle='--')
         plt.plot(list(n_serv_list), delay_list)
         plt.show()
+    
+        
+    # Task. 4 Analysis of the system with multi-server
+    if multi_server:
+        arrival_list = [10,6,2,8]
+        run(sim_time, fract, arr_t=arrival_list, n_serv_1 = 4, n_serv_2 = 4, results=True, plot=True)
+    
+
             
 
