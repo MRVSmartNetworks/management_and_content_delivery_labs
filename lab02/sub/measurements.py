@@ -214,3 +214,24 @@ class Measure:
         if img_name is not None:
             plt.savefig(img_name, dpi=300)
         plt.show()
+
+    def waitingDelayInTime(self, img_name=None):
+        """
+        waitingDelayInTime
+        ---
+        Plot the values of the waiting delay in time.
+
+        ### Input parameters:
+        - img_name: if provided (not None) the plot will be saved in the provided location
+        """
+
+        plt.figure(figsize=(8, 4))
+        plt.plot(self.waitingDelaysList, 'b')
+        plt.xlabel("Client number")
+        plt.ylabel("Waiting delay")
+        plt.title("Waiting delay evolution in time")
+        plt.tight_layout()
+        if img_name is not None:
+            plt.savefig(img_name, dpi=300)
+        plt.show()
+        

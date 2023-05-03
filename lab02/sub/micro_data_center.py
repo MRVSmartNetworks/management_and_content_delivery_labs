@@ -5,6 +5,7 @@ from sub.queue import Queue
 
 import random
 
+DEBUG = False
 
 class MicroDataCenter(Queue):
     """
@@ -148,6 +149,9 @@ class MicroDataCenter(Queue):
                 
                 # 'countLosses' is used to count the packets which are directly forwarded to the cloud when the micro data center is full
                 self.data.countLosses += 1
+
+                if DEBUG:
+                    print("loss at micro - forward packet to cloud directly")
 
                 # Scedule arrival into cloud data center
                 # It will happen after a fixed propagation time

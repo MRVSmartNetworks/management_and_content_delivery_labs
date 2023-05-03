@@ -5,6 +5,7 @@ from sub.queue import Queue
 
 import random
 
+DEBUG = False
 
 class CloudDataCenter(Queue):
     
@@ -26,16 +27,16 @@ class CloudDataCenter(Queue):
 
         
         # cumulate statistics
-        self.data.arr += 1
+        self.data.arr += 1              # Regardless of packet type
         self.data.ut += self.users*(time-self.data.oldT)
         self.data.avgBuffer += max(0, self.users - self.n_server)*(time-self.data.oldT)
         self.data.oldT = time
 
-        # sample the time until the next event
-        inter_arrival = random.expovariate(lambd=1.0/self.arr_t)
-        self.data.arrivalsList.append(inter_arrival)
+        # sample the time until the next event - - - - NOTE: not needed here, it is already done by the arrival
+        # inter_arrival = random.expovariate(lambd=1.0/self.arr_t)
+        # self.data.arrivalsList.append(inter_arrival)
         
-        # schedule the next arrival - - - - NOTE: not needed here, it is already done by the arrival
+        # schedule the next arrival 
         # FES.put((time + inter_arrival, ["arrival_micro", self.rand_pkt_type()]))
 
         ################################

@@ -7,7 +7,7 @@ import warnings
 # ******************************************************************************
 class Server(object):
     # constructor
-    def __init__(self, n_serv, serv_t, policy="first_idle"):
+    def __init__(self, n_serv, serv_t, policy="first_idle", costs=None):
         """
         Class used to model servers in the queuing system. 
 
@@ -67,6 +67,9 @@ class Server(object):
 
             # Whether each server is idle or not - init all to True (all idle)
             self.idle = [True] * n_serv
+
+            # if costs is not None:
+            self.costs = self.serv_rates
 
         # 'current' is used to track the choice of the next server
         # NOTE: if the n. of servers is infinite, the number 'current' will always stay 0 

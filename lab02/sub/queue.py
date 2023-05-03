@@ -6,6 +6,8 @@ from sub.measurements import Measure
 from sub.client import Client
 from sub.server import Server
 
+DEBUG = False
+
 class Queue:
     def __init__(self, serv_t, arr_t, queue_len, n_server, event_names, fract = 0.5):
         """
@@ -58,7 +60,7 @@ class Queue:
 
         self.fract = fract
 
-        self.propagation_time = 0.2 # transimssion delay between MicroDataCenter and CloudDataCenter
+        self.propagation_time = 0. # transimssion delay between MicroDataCenter and CloudDataCenter
 
     def addClient(self, time, FES, event_type):
         """
@@ -71,7 +73,7 @@ class Queue:
         pkt_type = event_type[1]
         if self.queue_len is not None:
             # Limited length
-            if self.users < self.queue_len:
+            if self.users < self.queue_len:     # Can insert new user in queue
                 self.users += 1
                 self.data.n_usr_t.append((self.users, time))
                 # create a record for the client
@@ -79,6 +81,8 @@ class Queue:
                 # insert the record in the queue
                 self.queue.append(client)
                 
+                assert(self.users == len(self.queue)), "The number of users does not correspond to the current queue length!"
+
                 # If there are less clients than servers, it means that the 
                 # new client can directly be served
                 # It may also be that the number of servers is unlimited 
@@ -108,6 +112,9 @@ class Queue:
             else:
                 # Lost client
                 self.data.countLosses += 1
+
+                if DEBUG:
+                    print("> Loss at cloud!")
         else:
             # Unlimited length
             self.users += 1
