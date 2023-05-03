@@ -32,8 +32,8 @@ class CloudDataCenter(Queue):
         self.data.oldT = time
 
         # sample the time until the next event
-        inter_arrival = random.expovariate(lambd=1.0/self.arr_t)
-        self.data.arrivalsList.append(inter_arrival)
+        # inter_arrival = random.expovariate(lambd=1.0/self.arr_t)
+        # self.data.arrivalsList.append(inter_arrival)
         
         # schedule the next arrival - - - - NOTE: not needed here, it is already done by the arrival
         # FES.put((time + inter_arrival, ["arrival_micro", self.rand_pkt_type()]))
