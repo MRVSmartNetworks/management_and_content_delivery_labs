@@ -76,12 +76,12 @@ def printResults(sim_time, mdc, cdc, plots=False):
 
         mdc.data.plotUsrInTime()
 
-        plt.figure(figsize=(8, 4))
-        plt.plot(np.linspace(1, sim_time, len(mdc.data.arrivalsList)), mdc.queue)
-        plt.title("Number of arrival of the system")
-        plt.xlabel("Simulation time")
-        plt.ylabel("Inter arrival times of the packets")
-        plt.show()
+        # plt.figure(figsize=(8, 4))
+        # plt.plot(np.linspace(1, sim_time, len(mdc.data.arrivalsList)), mdc.queue)
+        # plt.title("Number of arrival of the system")
+        # plt.xlabel("Simulation time")
+        # plt.ylabel("Inter arrival times of the packets")
+        # plt.show()
     """ 
     Some observations on the plot (param: dep_micro: 3s, arr_micro: 10s, dep_cloud: 5s):
     - Very few bins (the method sets n_bins=sqrt(unique values)), which means that few elements 
@@ -230,6 +230,8 @@ def run(
         return 0
 
 
+##################################################################
+
 if __name__ == "__main__":
     random.seed(1)
 
@@ -248,11 +250,13 @@ if __name__ == "__main__":
     )
 
     ###########################
-    do_iter = False
-    multi_server = True
+
+    task_2 = True
+    task_3 = False
+    task_4 = False
 
     ################ Task 2. Impact of micro data center queue length on the performance
-    if do_iter:
+    if task_2:
         # Iterations
         arr_t = 3.0
         n_iter = 15
@@ -378,7 +382,7 @@ if __name__ == "__main__":
     # Task.3 Analysis on packets A average time in the system
     # Threshold T_q to set desired max average time
     T_q = None
-    if T_q is not None:
+    if task_3 and T_q is not None:
         # a) Find min serv rate to reduce delay A below T_q
         serv_r_list = np.arange(0.1, 0.8, 0.1)
         min_found = False
@@ -420,7 +424,7 @@ if __name__ == "__main__":
         plt.show()
 
     # Task. 4 Analysis of the system with multi-server
-    if multi_server:
+    if task_4:
         arrival_list = [10, 6, 2, 8]
         run(
             sim_time,
