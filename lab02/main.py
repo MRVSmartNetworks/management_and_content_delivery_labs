@@ -57,6 +57,7 @@ def printResults(sim_time, mdc, cdc, plots=False):
     - sim_time: total simulation time
     - mdc: 'MicroDataCenter' class object
     - cdc: 'CloudDataCenter' class object
+    - plots: bool to choose whether to display figures (plots) or not
     """
     # Task 1(version A). Analysis of the waiting delay
     if plots:
@@ -151,9 +152,21 @@ def run(
     """
     Run
     ---
-    Paramaters:
-        - sim_time: simulation time
-        - fract: fraction of packets of type B
+    Launch simulation of the queuing system, lab 2.
+
+    ### Paramaters
+
+    - sim_time: simulation time
+    - fract: fraction of packets of type B
+    - arr_t: average inter-arrival time, queue 1
+    - serv_t_1: average service time, queue 1
+    - q1_len: length of queue 1
+    - n_serv_1: number of servers, queue 1
+    - serv_t_1: average service time, queue 2
+    - q2_len: length of queue 2
+    - n_serv_2: number of servers, queue 2
+    - results: bool to choose whether to print the results (stdout) or not
+    - plots: bool to choose whether to display the plots or not
     """
     FES = PriorityQueue()
 
@@ -379,7 +392,7 @@ if __name__ == "__main__":
         processed by CDC
         """
 
-    # Task.3 Analysis on packets A average time in the system
+    ################ Task 3. Analysis on packets A average time in the system
     # Threshold T_q to set desired max average time
     T_q = None
     if task_3 and T_q is not None:
@@ -423,7 +436,7 @@ if __name__ == "__main__":
         plt.plot(list(n_serv_list), delay_list)
         plt.show()
 
-    # Task. 4 Analysis of the system with multi-server
+    ################ Task 4. Analysis of the system with multi-server
     if task_4:
         arrival_list = [10, 6, 2, 8]
         run(
