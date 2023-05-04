@@ -73,6 +73,15 @@ def printResults(sim_time, mdc, cdc, plots=False):
         cdc.data.waitingDelayInTime(
             mean_value=True, img_name="./images/task1_waiting-delays-in-time-cdc.png"
         )
+
+        mdc.data.plotUsrInTime()
+
+        plt.figure(figsize=(8, 4))
+        plt.plot(np.linspace(1, sim_time, len(mdc.data.arrivalsList)), mdc.queue)
+        plt.title("Number of arrival of the system")
+        plt.xlabel("Simulation time")
+        plt.ylabel("Inter arrival times of the packets")
+        plt.show()
     """ 
     Some observations on the plot (param: dep_micro: 3s, arr_micro: 10s, dep_cloud: 5s):
     - Very few bins (the method sets n_bins=sqrt(unique values)), which means that few elements 
@@ -148,6 +157,10 @@ def run(
     """
     FES = PriorityQueue()
 
+    # control if there are more service rate during the simulation
+    # and split the simulation proportionally to the no. of service
+    # rates
+
     MDC = MicroDataCenter(
         serv_t=serv_t_1,
         arr_t=arr_t,
@@ -168,11 +181,19 @@ def run(
     type_pkt = MDC.rand_pkt_type(fract)
 
     # Simulation time
+    if isinstance(arr_t, list):
+        step_time = sim_time / len(arr_t)
+        step_app = step_time
+        i = 0
+        MDC.arr_t = arr_t[i]
+    else:
+        step_time = sim_time
+
     time = 0
 
     FES.put((0, ["arrival_micro", type_pkt, 0]))
 
-    while time < sim_time:
+    while time < step_time:
         # a = tm.time()
         (time, event_type) = FES.get()
         # b = tm.time()
@@ -192,6 +213,13 @@ def run(
 
         elif event_type[0] == "departure_cloud":
             CDC.departure(time, FES, event_type)
+
+        if (
+            time > step_time and step_time < sim_time
+        ):  # check if the simulation is not finished
+            step_time += step_app
+            i += 1
+            MDC.arr_t = arr_t[i]
 
     # Might be used later for returning the results in multi-run simulations
     if plots:
@@ -220,7 +248,8 @@ if __name__ == "__main__":
     )
 
     ###########################
-    do_iter = True
+    do_iter = False
+    multi_server = True
 
     ################ Task 2. Impact of micro data center queue length on the performance
     if do_iter:
@@ -351,35 +380,53 @@ if __name__ == "__main__":
     T_q = None
     if T_q is not None:
         # a) Find min serv rate to reduce delay A below T_q
-        serv_t_list = np.arange(8, 7, -0.2)
-        for serv_t in serv_t_list:
-            res_cdc, res_mdc = run(sim_time, fract, serv_t_1=serv_t, results=True)
+        serv_r_list = np.arange(0.1, 0.8, 0.1)
+        min_found = False
+        delay_list = []
+        for serv_r in serv_r_list:
+            res_cdc, res_mdc = run(sim_time, fract, serv_t_1=1.0 / serv_r, results=True)
             delay_A = (res_cdc.delay_A + res_mdc.delay_A) / (res_cdc.dep + res_mdc.dep)
-            if delay_A < T_q:
-                print(f"\nMinimum service rate is {serv_t}")
-                break
+            delay_list.append(delay_A)
+            if delay_A < T_q and not min_found:
+                print(f"\nMinimum service rate is {serv_r}")
+                min_found = True
+        plt.figure()
+        plt.title("Min serv_r to reduce delay_A below T_q")
+        plt.ylabel("delay_A")
+        plt.xlabel("serv_rate")
+        plt.axhline(T_q, linestyle="--")
+        plt.plot(list(serv_r_list), delay_list)
+
         # a) Find min no. of edge nodes to reduce delay A below T_q
-        n_serv_list = range(1, 5)
+        n_serv_list = range(1, 20)
+        min_found = False
+        delay_list = []
         for n_serv in n_serv_list:
-            res_cdc, res_mdc = run(sim_time, fract, serv_t_1=serv_t, results=True)
+            res_cdc, res_mdc = run(
+                sim_time, fract, n_serv_1=n_serv, serv_t_1=15.0, results=True
+            )
             delay_A = (res_cdc.delay_A + res_mdc.delay_A) / (res_cdc.dep + res_mdc.dep)
-            if delay_A < T_q:
+            delay_list.append(delay_A)
+            if delay_A < T_q and not min_found:
                 print(f"\nMinimum no. of edges is {n_serv}")
-                break
+                min_found = True
+
+        plt.figure()
+        plt.title("Min n_serv to reduce delay_A below T_q")
+        plt.xlabel("no. of servers")
+        plt.ylabel("delay_A")
+        plt.axhline(T_q, linestyle="--")
+        plt.plot(list(n_serv_list), delay_list)
+        plt.show()
 
     # Task. 4 Analysis of the system with multi-server
-    multi_server = False
-
     if multi_server:
-        arrival_list = [2, 4, 6, 8, 10]
+        arrival_list = [10, 6, 2, 8]
         run(
             sim_time,
             fract,
-            serv_t_1=3.0,
-            q1_len=20,
+            arr_t=arrival_list,
             n_serv_1=4,
-            serv_t_2=5.0,
-            q2_len=10,
             n_serv_2=4,
             results=True,
             plots=True,

@@ -207,7 +207,8 @@ class Measure:
             plt.title("Waiting delay histogram - no zeros considered")
         plt.xlabel("Delay")
         plt.ylabel("# in bins")
+        plt.plot()
         #plt.grid()
         if img_name is not None:
             plt.savefig(img_name, dpi=300)
-        plt.show()
+        #plt.show()
