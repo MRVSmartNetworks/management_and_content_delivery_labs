@@ -63,16 +63,14 @@ def printResults(sim_time, mdc, cdc, plots=False):
     if plots:
         cdc.data.waitingDelayHist(
             zeros=True,
-            mean_value=False,
-            img_name="./images/task1_waiting-delays-cdc.png",
+            mean_value=False
         )
         cdc.data.waitingDelayHist(
             zeros=False,
-            mean_value=True,
-            img_name="./images/task1_waiting-delays-no-zeros-cdc.png",
+            mean_value=True
         )
         cdc.data.waitingDelayInTime(
-            mean_value=True, img_name="./images/task1_waiting-delays-in-time-cdc.png"
+            mean_value=True
         )
 
         mdc.data.plotUsrInTime()
@@ -247,27 +245,27 @@ def run(
 
 if __name__ == "__main__":
     random.seed(1)
-
     sim_time = 50000
     fract = 0.5
-    run(
-        sim_time,
-        fract,
-        arr_t=3.0,
-        serv_t_1=2.0,
-        q1_len=10,
-        serv_t_2=4.0,
-        q2_len=20,
-        results=True,
-        plots=True,
-    )
+
+    basicRun = False
+    task_2 = False
+    task_3 = False
+    task_4 = True
+    if basicRun:
+        run(
+            sim_time,
+            fract,
+            arr_t=3.0,
+            serv_t_1=2.0,
+            q1_len=10,
+            serv_t_2=4.0,
+            q2_len=20,
+            results=True,
+            plots=True,
+        )
 
     ###########################
-
-    task_2 = True
-    task_3 = False
-    task_4 = False
-
     ################ Task 2. Impact of micro data center queue length on the performance
     if task_2:
         # Iterations
@@ -436,15 +434,45 @@ if __name__ == "__main__":
         plt.plot(list(n_serv_list), delay_list)
         plt.show()
 
-    ################ Task 4. Analysis of the system with multi-server
+    ########### Task 4. Analysis of the system with multi-server and opertational costs
     if task_4:
-        arrival_list = [10, 6, 2, 8]
-        run(
-            sim_time,
-            fract,
-            arr_t=arrival_list,
-            n_serv_1=4,
-            n_serv_2=4,
-            results=True,
-            plots=True,
-        )
+        #TODO: assign operational cost to each edge node and to the cloud servers
+        task_4a= False
+        task_4b = True
+       
+        # a) Vary packet arrival rate over time and analyze system performance
+        if task_4a:
+            arr_t_list = [2, 6, 13, 1]
+            run(
+                sim_time,
+                fract,
+                arr_t=arr_t_list,
+                n_serv_1=4,
+                n_serv_2=4,
+                results=True,
+                plots=True,
+            )
+        # b) 
+        if task_4b:
+            res_cdc, res_mdc = run(
+                sim_time,
+                fract,
+                arr_t=1.0,
+                n_serv_1=4,
+                n_serv_2=4,
+                serv_t_2=[2,6,6,10],
+                results=True,
+                plots=False,
+            )
+            print(
+                f"\nWHOLE SYSTEM\n"
+                f"Queuing delay: {res_cdc.delay + res_mdc.delay}\n"
+                "Packet drop probability:"
+                f"{(res_cdc.countLosses + res_mdc.countLosses)/(res_cdc.arr + res_mdc.arr)}\n"
+                "\nCLOUD DATA CENTER\n"
+                f"Queuing delay: {res_cdc.delay}\n"
+                f"Packet drop probability: {res_cdc.countLosses/res_cdc.arr}\n"
+                "\nMICRO DATA CENTER\n"
+                f"Queuing delay: {res_mdc.delay}\n"
+                f"Packet drop probability: {res_mdc.countLosses/res_mdc.arr}"
+                )
