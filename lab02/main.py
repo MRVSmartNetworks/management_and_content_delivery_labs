@@ -61,17 +61,9 @@ def printResults(sim_time, mdc, cdc, plots=False):
     """
     # Task 1(version A). Analysis of the waiting delay
     if plots:
-        cdc.data.waitingDelayHist(
-            zeros=True,
-            mean_value=False
-        )
-        cdc.data.waitingDelayHist(
-            zeros=False,
-            mean_value=True
-        )
-        cdc.data.waitingDelayInTime(
-            mean_value=True
-        )
+        cdc.data.waitingDelayHist(zeros=True, mean_value=False)
+        cdc.data.waitingDelayHist(zeros=False, mean_value=True)
+        cdc.data.waitingDelayInTime(mean_value=True)
 
         mdc.data.plotUsrInTime()
 
@@ -249,9 +241,9 @@ if __name__ == "__main__":
     fract = 0.5
 
     basicRun = False
-    task_2 = False
+    task_2 = True
     task_3 = False
-    task_4 = True
+    task_4 = False
     if basicRun:
         run(
             sim_time,
@@ -295,8 +287,7 @@ if __name__ == "__main__":
                 )
             )
 
-        # Plot results:
-
+        ## Plot results:
         # Avg. users in queue 1 (MDC)
         avg_usr_mdc_a = [x[0].ut / sim_time for x in tmp_res_a]
 
@@ -308,7 +299,7 @@ if __name__ == "__main__":
         plt.plot(q_lengths, avg_usr_cdc_a, "r", label="Cloud Data Center")
         plt.legend()
         plt.grid()
-        plt.title("Average number of users in both queues vs. queue 1 size")
+        plt.title("Average number of users in both queues vs. queue 1 (MDC) size")
         plt.xlabel("Queue 1 length")
         plt.ylabel("Avg. users")
         plt.tight_layout()
@@ -331,10 +322,35 @@ if __name__ == "__main__":
         for i in range(len(q_lengths)):
             DEBUG = False
             random.seed(seeds[i])
-            tmp_res_b.append(run(sim_time, fract, q2_len=q_lengths[i], results=True))
+            tmp_res_b.append(
+                run(
+                    sim_time,
+                    fract,
+                    serv_t_1=10.0,
+                    q1_len=10,
+                    serv_t_2=15.0,
+                    q2_len=q_lengths[i],
+                    results=True,
+                )
+            )
 
-        # Plot results:
-        # TODO: which ones?
+        ## Plot results:
+        # Avg. users in queue 1 (MDC)
+        avg_usr_mdc_b = [x[0].ut / sim_time for x in tmp_res_b]
+
+        # Avg. users in queue 2
+        avg_usr_cdc_b = [x[1].ut / sim_time for x in tmp_res_b]
+
+        plt.figure(figsize=(10, 5))
+        plt.plot(q_lengths, avg_usr_mdc_b, "b", label="Micro Data Center")
+        plt.plot(q_lengths, avg_usr_cdc_b, "r", label="Cloud Data Center")
+        plt.legend()
+        plt.grid()
+        plt.title("Average number of users in both queues vs. queue 2 (CDC) size")
+        plt.xlabel("Queue 1 length")
+        plt.ylabel("Avg. users")
+        plt.tight_layout()
+        plt.show()
 
         ################# c. Changing value of f (fraction of packets of type B)
         for i in range(len(f_values)):
@@ -436,10 +452,10 @@ if __name__ == "__main__":
 
     ########### Task 4. Analysis of the system with multi-server and opertational costs
     if task_4:
-        #TODO: assign operational cost to each edge node and to the cloud servers
-        task_4a= False
+        # TODO: assign operational cost to each edge node and to the cloud servers
+        task_4a = False
         task_4b = True
-       
+
         # a) Vary packet arrival rate over time and analyze system performance
         if task_4a:
             arr_t_list = [2, 6, 13, 1]
@@ -452,7 +468,7 @@ if __name__ == "__main__":
                 results=True,
                 plots=True,
             )
-        # b) 
+        # b)
         if task_4b:
             res_cdc, res_mdc = run(
                 sim_time,
@@ -460,7 +476,7 @@ if __name__ == "__main__":
                 arr_t=1.0,
                 n_serv_1=4,
                 n_serv_2=4,
-                serv_t_2=[2,6,6,10],
+                serv_t_2=[2, 6, 6, 10],
                 results=True,
                 plots=False,
             )
@@ -475,4 +491,4 @@ if __name__ == "__main__":
                 "\nMICRO DATA CENTER\n"
                 f"Queuing delay: {res_mdc.delay}\n"
                 f"Packet drop probability: {res_mdc.countLosses/res_mdc.arr}"
-                )
+            )
