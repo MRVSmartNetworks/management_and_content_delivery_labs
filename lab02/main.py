@@ -16,7 +16,7 @@ task_3 = False
 task_4 = True
 task_4a = False
 task_4b = False
-task_4c = False
+task_4c = True
 task_4d = False
 
 """
@@ -557,23 +557,30 @@ if __name__ == "__main__":
             # NEW fraction
             f = 0.75
             # The operational cost is defined as the rate
-            max_oper_cost = 100  # To be reviewed
+            max_oper_cost = 25000  # To be reviewed
             n_serv_2 = 4
+            # different server types compinations
+            serv_t_list = [
+                [10,10,10,10], [1,1,1,1],
+                [5,5,5,5], [1,1,10,10]
+            ]
 
             T_q = 1000  # To be reviewed
 
-            print(f"Maximum cost threshold: {max_oper_cost}")
-
-            res_mdc, res_cdc = run(
-                sim_time,
-                f,
-                arr_t=1.0,
-                n_serv_1=4,
-                n_serv_2=n_serv_2,
-                serv_t_2=[2, 6, 6, 10],
-                server_costs=True,
-                results=True,
-            )
+            print(f"\nMaximum cost threshold: {max_oper_cost}")
+            #TODO: check if constraints of task 3 are respected
+            for serv_t_2 in serv_t_list:
+                print("\nServer arrival time configuration:", serv_t_2)
+                res_mdc, res_cdc = run(
+                    sim_time,
+                    f,
+                    arr_t=1.0,
+                    n_serv_1=4,
+                    n_serv_2=n_serv_2,
+                    serv_t_2=serv_t_2,
+                    server_costs=True,
+                    results=True,
+                )
 
             if task_4d:
                 """
