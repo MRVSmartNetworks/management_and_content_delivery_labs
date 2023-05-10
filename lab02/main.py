@@ -95,27 +95,27 @@ def printResults(sim_time, mdc, cdc, plots=False):
         cdc.data.plotUsrMovingAvg()
         mdc.data.plotUsrMovingAvg()
 
-        # Removing warm-up transient
+        # TODO: Removing warm-up transient
 
         # Evaluate mean of waiting delay and then find point in which relative variation becomes low
-        avg_wait_del = np.mean(cdc.data.waitingDelaysList)
-        mean_k = np.zeros((round(len(cdc.data.waitingDelaysList) / 2),))
-        for k in range(round(len(cdc.data.waitingDelaysList) / 2)):
-            mean_k[k] = np.mean(cdc.data.waitingDelaysList[k:])
+        # avg_wait_del = np.mean(cdc.data.waitingDelaysList)
+        # mean_k = np.zeros((round(len(cdc.data.waitingDelaysList) / 2),))
+        # for k in range(round(len(cdc.data.waitingDelaysList) / 2)):
+        #     mean_k[k] = np.mean(cdc.data.waitingDelaysList[k:])
 
-        relative_variation = (mean_k - avg_wait_del) / avg_wait_del
+        # relative_variation = (mean_k - avg_wait_del) / avg_wait_del
 
-        plt.figure(figsize=(8, 4))
-        plt.plot(relative_variation, "b", label="relative variation")
-        plt.plot(
-            np.gradient(relative_variation), "g", label="relative variation derivative"
-        )
-        plt.title("Relative variation, average waiting delay")
-        plt.grid()
-        plt.xlabel("n")
-        plt.ylabel("R")
-        plt.tight_layout()
-        plt.show()
+        # plt.figure(figsize=(8, 4))
+        # plt.plot(relative_variation, "b", label="relative variation")
+        # plt.plot(
+        #     np.gradient(relative_variation), "g", label="relative variation derivative"
+        # )
+        # plt.title("Relative variation, average waiting delay")
+        # plt.grid()
+        # plt.xlabel("n")
+        # plt.ylabel("R")
+        # plt.tight_layout()
+        # plt.show()
 
         # Observing the average number of packets in the queue (CDC)
         # cdc.data.plotUsrInTime(mean_value=True)
@@ -559,15 +559,12 @@ if __name__ == "__main__":
             max_oper_cost = 25000  # To be reviewed
             n_serv_2 = 4
             # different server types compinations
-            serv_t_list = [
-                [10,10,10,10], [1,1,1,1],
-                [5,5,5,5], [1,1,10,10]
-            ]
+            serv_t_list = [[10, 10, 10, 10], [1, 1, 1, 1], [5, 5, 5, 5], [1, 1, 10, 10]]
 
             T_q = 1000  # To be reviewed
 
             print(f"\nMaximum cost threshold: {max_oper_cost}")
-            #TODO: check if constraints of task 3 are respected
+            # TODO: check if constraints of task 3 are respected
             for serv_t_2 in serv_t_list:
                 print("\nServer arrival time configuration:", serv_t_2)
                 res_mdc, res_cdc = run(
