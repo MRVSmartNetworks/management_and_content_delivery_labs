@@ -20,9 +20,9 @@ class Measure:
         self.ut = NAveraegUser  # N packets * dt
         self.ut_in_time = []
 
-        self.n_usr_t = [
-            (0, 0)
-        ]  # Number of users in time, append tuple (n_user, current time) at each measurement
+        self.n_usr_t = (
+            []
+        )  # Number of users in time, append tuple (n_user, current time) at each measurement
         self.oldT = OldTimeEvent  # Time of the last performed event
         self.delay = AverageDelay  # Average time spent in system
         self.delay_A = 0  # Average time spent by packet A in system

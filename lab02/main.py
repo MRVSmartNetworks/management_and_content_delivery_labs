@@ -7,10 +7,10 @@ import scipy.stats as st
 from queue import Queue, PriorityQueue
 import time as tm
 
-DEBUG = False
+DEBUG = True
 
-basicRun = False
-task_1 = True
+basicRun = True
+task_1 = False
 task_2 = False
 task_3 = False
 task_4 = False
@@ -131,6 +131,10 @@ def printResults(sim_time, mdc, cdc, plots=False):
         print(f"Average number of users, CDC: {cdc.data.ut/sim_time}")
         print()
 
+        if plots:
+            mdc.data.plotUsrMovingAvg()
+            cdc.data.plotUsrMovingAvg()
+
     ##### Results about point 4
     if task_4:
         if task_4b:
@@ -188,6 +192,7 @@ def run(
     server_costs=False,
     results=False,
     plots=False,
+    transient_duration=0,
 ):
     """
     Run
@@ -260,6 +265,9 @@ def run(
         # print(f"Current time: {time} - event: {event_type}")
 
         # tm.sleep(2)
+        if time >= transient_duration:
+            MDC.endTransient()
+            CDC.endTransient()
 
         if event_type[0] == "arrival_micro":
             MDC.arrival(time, FES, event_type)
@@ -308,6 +316,7 @@ if __name__ == "__main__":
             q2_len=20,
             results=True,
             plots=True,
+            transient_duration=initial_transient_upper_bound,
         )
 
     ##############################################################

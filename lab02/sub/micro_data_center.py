@@ -28,13 +28,14 @@ class MicroDataCenter(Queue):
         type_pkt = event_type[1]
         serv_id = event_type[2]
         # cumulate statistics
-        self.data.dep += 1
-        self.data.ut += self.users * (time - self.data.oldT)
-        self.data.ut_in_time.append([time, self.data.ut])
+        if not self.in_transient:
+            self.data.dep += 1
+            self.data.ut += self.users * (time - self.data.oldT)
+            self.data.ut_in_time.append([time, self.data.ut])
 
-        self.data.avgBuffer += max(0, self.users - self.n_server) * (
-            time - self.data.oldT
-        )
+            self.data.avgBuffer += max(0, self.users - self.n_server) * (
+                time - self.data.oldT
+            )
 
         self.data.oldT = time
 
@@ -57,22 +58,30 @@ class MicroDataCenter(Queue):
                 # Add to the cumulative time the time difference between now (service end)
                 # and the beginning of the service
                 # print(data.serv_busy['cumulative_time'])
-                self.data.serv_busy[serv_id]["cumulative_time"] += (
-                    time - self.data.serv_busy[serv_id]["begin_last_service"]
-                )
+                if not self.in_transient:
+                    self.data.serv_busy[serv_id]["cumulative_time"] += (
+                        time - self.data.serv_busy[serv_id]["begin_last_service"]
+                    )
 
             # do whatever we need to do when clients go away
             if client.type == "A":
-                self.data.delay_A += time - client.arrival_time
-                self.data.delay_pkt_A[client.pkt_ID] = time - client.arrival_times[-1]
+                if not self.in_transient:
+                    self.data.delay_A += time - client.arrival_time
+                    self.data.delay_pkt_A[client.pkt_ID] = (
+                        time - client.arrival_times[-1]
+                    )
             elif client.type == "B":
-                self.data.delay_B += time - client.arrival_time
-                self.data.delay_pkt_B[client.pkt_ID] = time - client.arrival_times[-1]
+                if not self.in_transient:
+                    self.data.delay_B += time - client.arrival_time
+                    self.data.delay_pkt_B[client.pkt_ID] = (
+                        time - client.arrival_times[-1]
+                    )
 
-            self.data.delay += time - client.arrival_time
-            self.data.delaysList.append(time - client.arrival_time)
-            self.users -= 1
-            self.data.n_usr_t.append((self.users, time))
+            if not self.in_transient:
+                self.data.delay += time - client.arrival_time
+                self.data.delaysList.append(time - client.arrival_time)
+                self.users -= 1
+                self.data.n_usr_t.append((self.users, time))
 
         # Update time
         self.data.oldT = time
@@ -90,16 +99,20 @@ class MicroDataCenter(Queue):
         if can_add:
             # Sample the service time
             service_time, new_serv_id = self.servers.evalServTime(type="expovariate")
-            self.data.servicesList.append(service_time)
+            if not self.in_transient:
+                self.data.servicesList.append(service_time)
 
             new_served = self.queue[0]
 
             # Update total costs (they will be 0 if not defined)
-            self.data.tot_serv_costs += self.servers.costs[new_serv_id]
+            if not self.in_transient:
+                self.data.tot_serv_costs += self.servers.costs[new_serv_id]
 
-            self.data.waitingDelaysList.append(time - new_served.arrival_time)
-            self.data.waitingDelaysList_no_zeros.append(time - new_served.arrival_time)
-            self.data.waiting_delays_times.append(time)
+                self.data.waitingDelaysList.append(time - new_served.arrival_time)
+                self.data.waitingDelaysList_no_zeros.append(
+                    time - new_served.arrival_time
+                )
+                self.data.waiting_delays_times.append(time)
 
             # Schedule when the service will end
             FES.put(
@@ -109,7 +122,8 @@ class MicroDataCenter(Queue):
 
             if self.n_server is not None:
                 # Update the beginning of the service
-                self.data.serv_busy[new_serv_id]["begin_last_service"] = time
+                if not self.in_transient:
+                    self.data.serv_busy[new_serv_id]["begin_last_service"] = time
 
     # No need to implement the method 'arrival' since we already changed 'addClient'
     # def arrival(self, time, FES, event_type):
@@ -131,8 +145,9 @@ class MicroDataCenter(Queue):
 
             if self.users < self.queue_len:
                 self.users += 1
-                self.data.n_usr_t.append((self.users, time))
-                self.data.count_types[pkt_type] += 1
+                if not self.in_transient:
+                    self.data.n_usr_t.append((self.users, time))
+                    self.data.count_types[pkt_type] += 1
 
                 new_pkt_id = f"{pkt_type}{self.data.count_types[pkt_type]}"
 
@@ -153,7 +168,8 @@ class MicroDataCenter(Queue):
                     service_time, serv_id = self.servers.evalServTime(
                         type="expovariate"
                     )
-                    self.data.servicesList.append(service_time)
+                    if not self.in_transient:
+                        self.data.servicesList.append(service_time)
                     # service_time = 1 + random.uniform(0, SEVICE_TIME)
 
                     # schedule when the client will finish the server
@@ -163,28 +179,34 @@ class MicroDataCenter(Queue):
                     self.servers.makeBusy(serv_id)
 
                     # Update total costs (they will be 0 if not defined)
-                    self.data.tot_serv_costs += self.servers.costs[serv_id]
+                    if not self.in_transient:
+                        self.data.tot_serv_costs += self.servers.costs[serv_id]
 
                     if self.n_server is not None:
                         # Update the beginning of the service
-                        self.data.serv_busy[serv_id]["begin_last_service"] = time
+                        if not self.in_transient:
+                            self.data.serv_busy[serv_id]["begin_last_service"] = time
 
                     # Update the waiting time for the client which starts to be served straight away
                     # Get the client - not extracting:
                     cli = self.queue[0]
-                    self.data.waitingDelaysList.append(time - cli.arrival_time)
-                    self.data.waiting_delays_times.append(time)
+                    if not self.in_transient:
+                        self.data.waitingDelaysList.append(time - cli.arrival_time)
+                        self.data.waiting_delays_times.append(time)
 
             else:
                 # Full self.queue - send the client directly to the cloud
 
                 # 'countLosses' is used to count the packets which are directly forwarded to the cloud when the micro data center is full
                 if pkt_type == "A":
-                    self.data.countLosses_B += 1
+                    if not self.in_transient:
+                        self.data.countLosses_B += 1
                 elif pkt_type == "B":
-                    self.data.countLosses_B += 1
+                    if not self.in_transient:
+                        self.data.countLosses_B += 1
 
-                self.data.countLosses += 1
+                if not self.in_transient:
+                    self.data.countLosses += 1
 
                 if DEBUG:
                     print("loss at micro - forward packet to cloud directly")
@@ -197,7 +219,8 @@ class MicroDataCenter(Queue):
         else:
             # Unlimited length
             self.users += 1
-            self.data.n_usr_t.append((self.users, time))
+            if not self.in_transient:
+                self.data.n_usr_t.append((self.users, time))
 
             # create a record for the client
             client = Client(pkt_type, time)
@@ -210,7 +233,8 @@ class MicroDataCenter(Queue):
             if self.n_server is None or self.users <= self.n_server:
                 # sample the service time
                 service_time, serv_id = self.servers.evalServTime(type="expovariate")
-                self.data.servicesList.append(service_time)
+                if not self.in_transient:
+                    self.data.servicesList.append(service_time)
                 # service_time = 1 + random.uniform(0, SEVICE_TIME)
 
                 # schedule when the client will finish the server
@@ -219,10 +243,12 @@ class MicroDataCenter(Queue):
 
                 if self.n_server is not None:
                     # Update the beginning of the service
-                    self.data.serv_busy[serv_id]["begin_last_service"] = time
+                    if not self.in_transient:
+                        self.data.serv_busy[serv_id]["begin_last_service"] = time
 
                 # Update the waiting time for the client which starts to be served straight away
                 # Get the client - not extracting:
                 cli = self.queue[0]
-                self.data.waitingDelaysList.append(time - cli.arrival_time)
-                self.data.waiting_delays_times.append(time)
+                if not self.in_transient:
+                    self.data.waitingDelaysList.append(time - cli.arrival_time)
+                    self.data.waiting_delays_times.append(time)
