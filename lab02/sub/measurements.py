@@ -10,6 +10,10 @@ class Measure:
 
         self.n_serv = n_servers
 
+        # Keep a count for the number of packets of each type
+        # NOTE: this is the number of packets which ENTER the queue
+        self.count_types = {"A": 0, "B": 0}
+
         self.arr = Narr  # Count arrivals (also including lost packets)
         self.dep = Ndep  # Count departures (TRANSMITTED PACKETS)
         # Count average number of users in time - add to ut the number of clients times the time span it remained constant
@@ -20,8 +24,16 @@ class Measure:
         self.oldT = OldTimeEvent  # Time of the last performed event
         self.delay = AverageDelay  # Average time spent in system
         self.delay_A = 0  # Average time spent by packet A in system
-        #
+        self.delay_B = 0  # Average time spent by packet B in system
+
         self.countLosses = countLoss  # Number of losses (DROPPED PACKETS)
+        self.countLosses_A = countLoss
+        self.countLosses_B = countLoss
+
+        # Delay of packets A - This dict has as keys the packet IDs and as values the evaluated delays for the queue
+        self.delay_pkt_A = {}
+        # Delay of packets B
+        self.delay_pkt_B = {}
 
         # Distribution of the queuing delay
         # Save all values as a list and make the histogram when needed
@@ -64,6 +76,9 @@ class Measure:
         else:
             # Unlimited n. of servers       ! complicated
             pass
+
+        ### Total operation cost:
+        self.tot_serv_costs = 0
 
     def queuingDelayHist(self, mean_value=False, img_name=None):
         """

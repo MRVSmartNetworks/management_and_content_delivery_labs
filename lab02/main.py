@@ -9,6 +9,11 @@ import time as tm
 
 DEBUG = False
 
+basicRun = False
+task_2 = False
+task_3 = False
+task_4 = True
+
 """
 Version:
               .o.       
@@ -123,6 +128,21 @@ def printResults(sim_time, mdc, cdc, plots=False):
         print(f"Average number of users, CDC: {cdc.data.ut/sim_time}")
         print()
 
+    ##### Results about point 4
+    if task_4:
+        # 4.c - Total cost
+        print("\n+––––––––––––– Task 4c –––––––––––––+")
+
+        print(
+            f"Total operational cost: {mdc.data.tot_serv_costs + cdc.data.tot_serv_costs}"
+        )
+        print(f"  - Total cost, MDC: {mdc.data.tot_serv_costs}")
+        print(f"  - Total cost, CDC: {cdc.data.tot_serv_costs}")
+
+        # 4.c - maximum queuing delay
+
+        print()
+
     return mdc.data, cdc.data
 
 
@@ -136,6 +156,7 @@ def run(
     serv_t_2=5.0,
     q2_len=20,
     n_serv_2=1,
+    server_costs=False,
     results=False,
     plots=False,
 ):
@@ -170,6 +191,7 @@ def run(
         queue_len=q1_len,
         n_server=n_serv_1,
         event_names=["arrival_micro", "departure_micro"],
+        costs=server_costs,
     )
 
     CDC = CloudDataCenter(
@@ -178,6 +200,7 @@ def run(
         queue_len=q2_len,
         n_server=n_serv_2,
         event_names=["arrival_cloud", "departure_cloud"],
+        costs=server_costs,
     )
 
     # Pick at random the first packet given the fraction of B
@@ -240,10 +263,6 @@ if __name__ == "__main__":
     sim_time = 50000
     fract = 0.5
 
-    basicRun = False
-    task_2 = True
-    task_3 = False
-    task_4 = False
     if basicRun:
         run(
             sim_time,
@@ -415,7 +434,7 @@ if __name__ == "__main__":
         min_found = False
         delay_list = []
         for serv_r in serv_r_list:
-            res_cdc, res_mdc = run(sim_time, fract, serv_t_1=1.0 / serv_r, results=True)
+            res_mdc, res_cdc = run(sim_time, fract, serv_t_1=1.0 / serv_r, results=True)
             delay_A = (res_cdc.delay_A + res_mdc.delay_A) / (res_cdc.dep + res_mdc.dep)
             delay_list.append(delay_A)
             if delay_A < T_q and not min_found:
@@ -433,7 +452,7 @@ if __name__ == "__main__":
         min_found = False
         delay_list = []
         for n_serv in n_serv_list:
-            res_cdc, res_mdc = run(
+            res_mdc, res_cdc = run(
                 sim_time, fract, n_serv_1=n_serv, serv_t_1=15.0, results=True
             )
             delay_A = (res_cdc.delay_A + res_mdc.delay_A) / (res_cdc.dep + res_mdc.dep)
@@ -453,8 +472,10 @@ if __name__ == "__main__":
     ########### Task 4. Analysis of the system with multi-server and opertational costs
     if task_4:
         # TODO: assign operational cost to each edge node and to the cloud servers
-        task_4a = False
-        task_4b = True
+        task_4a = True
+        task_4b = False
+        task_4c = False
+        task_4d = False
 
         # a) Vary packet arrival rate over time and analyze system performance
         if task_4a:
@@ -470,7 +491,7 @@ if __name__ == "__main__":
             )
         # b)
         if task_4b:
-            res_cdc, res_mdc = run(
+            res_mdc, res_cdc = run(
                 sim_time,
                 fract,
                 arr_t=1.0,
@@ -491,4 +512,60 @@ if __name__ == "__main__":
                 "\nMICRO DATA CENTER\n"
                 f"Queuing delay: {res_mdc.delay}\n"
                 f"Packet drop probability: {res_mdc.countLosses/res_mdc.arr}"
+                f"Cloud servers total costs: {res_cdc.tot_serv_costs}"
             )
+
+        if task_4c:
+            """
+            Set a value of f > 0.5 and define a desired threshold on the
+            maximum operational cost.
+                • Identify the best combination of server types allowing
+                to reduce the cost below the desired threshold.
+                • Does this combination allow to respect the constraint
+                on the maximum queu- ing delay, i.e. Tq, set in Task 3
+                for type A packets?
+            """
+            # NEW fraction
+            f = 0.75
+            # The operational cost is defined as the rate
+            max_oper_cost = 100  # To be reviewed
+            n_serv_2 = 4
+
+            T_q = 1000  # To be reviewed
+
+            print(f"Maximum cost threshold: {max_oper_cost}")
+
+            res_mdc, res_cdc = run(
+                sim_time,
+                f,
+                arr_t=1.0,
+                n_serv_1=4,
+                n_serv_2=n_serv_2,
+                serv_t_2=[2, 6, 6, 10],
+                server_costs=True,
+                results=True,
+            )
+
+            if task_4d:
+                """
+                Install half the number of Cloud servers, keeping the same value
+                of f
+                    - identify configuration of service types such that the cost
+                    is below desired threshold
+                    - compare queueing delay and cost under N servers and N/2
+                    servers  highlighting how packets of
+                    type A and packets of type B are differently affected in terms of delay and
+                    packet drop probability
+                """
+                n_serv_2 /= 2
+
+                res_cdc_d, res_mdc_d = run(
+                    sim_time,
+                    f,
+                    arr_t=1.0,
+                    n_serv_1=4,
+                    n_serv_2=n_serv_2,
+                    serv_t_2=[2, 6, 6, 10],
+                    results=True,
+                    plots=False,
+                )

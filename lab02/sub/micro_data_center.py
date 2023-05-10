@@ -62,6 +62,9 @@ class MicroDataCenter(Queue):
             # do whatever we need to do when clients go away
             if client.type == "A":
                 self.data.delay_A += time - client.arrival_time
+            elif client.type == "B":
+                self.data.delay_B += time - client.arrival_time
+
             self.data.delay += time - client.arrival_time
             self.data.delaysList.append(time - client.arrival_time)
             self.users -= 1
@@ -86,6 +89,9 @@ class MicroDataCenter(Queue):
             self.data.servicesList.append(service_time)
 
             new_served = self.queue[0]
+
+            # Update total costs (they will be 0 if not defined)
+            self.data.tot_serv_costs += self.servers.costs[new_serv_id]
 
             self.data.waitingDelaysList.append(time - new_served.arrival_time)
             self.data.waitingDelaysList_no_zeros.append(time - new_served.arrival_time)
@@ -144,6 +150,9 @@ class MicroDataCenter(Queue):
                     )
                     self.servers.makeBusy(serv_id)
 
+                    # Update total costs (they will be 0 if not defined)
+                    self.data.tot_serv_costs += self.servers.costs[serv_id]
+
                     if self.n_server is not None:
                         # Update the beginning of the service
                         self.data.serv_busy[serv_id]["begin_last_service"] = time
@@ -157,6 +166,11 @@ class MicroDataCenter(Queue):
                 # Full self.queue - send the client directly to the cloud
 
                 # 'countLosses' is used to count the packets which are directly forwarded to the cloud when the micro data center is full
+                if pkt_type == "A":
+                    self.data.countLosses_B += 1
+                elif pkt_type == "B":
+                    self.data.countLosses_B += 1
+
                 self.data.countLosses += 1
 
                 if DEBUG:

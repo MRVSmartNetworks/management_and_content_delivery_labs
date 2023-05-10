@@ -8,7 +8,7 @@ import warnings
 # ******************************************************************************
 class Server(object):
     # constructor
-    def __init__(self, n_serv, serv_t, policy="first_idle", costs=None):
+    def __init__(self, n_serv, serv_t, policy="first_idle", costs=False):
         """
         Class used to model servers in the queuing system.
 
@@ -23,8 +23,6 @@ class Server(object):
         Attributes:
         -
         """
-
-        # Case n_serv = None: ???????
 
         self.n_servers = n_serv
 
@@ -42,6 +40,13 @@ class Server(object):
                 self.serv_rates = [1.0 / x for x in serv_t]
             else:
                 raise ValueError("The value for 'serv_rate' is wrong!")
+
+            if costs:
+                raise ValueError(
+                    "Unable to define costs - infinitely many servers have been defined!"
+                )
+
+            self.costs = [0]
 
         else:
             # Limited servers
@@ -69,8 +74,11 @@ class Server(object):
             # Whether each server is idle or not - init all to True (all idle)
             self.idle = [True] * n_serv
 
-            # if costs is not None:
-            self.costs = self.serv_rates
+            # Assign costs (if defined)
+            if costs:  # task 4b server costs
+                self.costs = self.evalServerCost()  # evaluation of the server costs
+            else:
+                self.costs = [0 for i in range(n_serv)]
 
         # 'current' is used to track the choice of the next server
         # NOTE: if the n. of servers is infinite, the number 'current' will always stay 0
@@ -131,10 +139,14 @@ class Server(object):
 
         Parameters:
         - type: distribution type
-            -> Possible values:
-            > expovariate: exponential service time
-            > constant: constant service time equal to 1/serv_rate of current server
-            > uniform: uniform in (0, 2/serv_rate) of current server
+          -> Possible values:
+          - expovariate: exponential service time
+          - constant: constant service time equal to 1/serv_rate of current server
+          - uniform: uniform in (0, 2/serv_rate) of current server
+
+        Return values:
+        - service_time: extracted random value of the service time
+        - self.current: index of the used server
         """
         # Update
         self.chooseNextServer()
@@ -192,3 +204,17 @@ class Server(object):
             raise ValueError(
                 f"The provided ID {serv_id} exceeds the maximum number of servers {self.n_servers}"
             )
+
+    def evalServerCost(self, rates=None):
+        """
+        evalServerCost
+        ---
+        Evaluate the cost associated to the servers.
+
+        -> The cost is equal to the service rate.
+        """
+        if rates is None:
+            self.costs = self.serv_rates
+        else:
+            # Avoidable
+            self.costs = rates

@@ -9,7 +9,9 @@ DEBUG = False
 
 
 class Queue:
-    def __init__(self, serv_t, arr_t, queue_len, n_server, event_names, fract=0.5):
+    def __init__(
+        self, serv_t, arr_t, queue_len, n_server, event_names, fract=0.5, costs=False
+    ):
         """
         Queue
         ---
@@ -52,13 +54,12 @@ class Queue:
         self.arr_name = event_names[0]
         self.dep_name = event_names[1]
 
+        self.types = ["A", "B"]
         self.data = Measure(0, 0, 0, 0, 0, 0, n_server)
 
         self.queue = []
         self.users = len(self.queue)
-        self.servers = Server(n_server, serv_t)
-
-        self.types = ["A", "B"]
+        self.servers = Server(n_server, serv_t, costs=costs)
 
         self.fract = fract
 
@@ -80,8 +81,15 @@ class Queue:
             if self.users < self.queue_len:  # Can insert new user in queue
                 self.users += 1
                 self.data.n_usr_t.append((self.users, time))
-                # create a record for the client
-                client = Client(pkt_type, time)
+                self.data.count_types[pkt_type] += 1
+
+                new_pkt_id = f"{pkt_type}{self.data.count_types[pkt_type]}"
+
+                ## Create a record for the client
+                client = Client(pkt_type, time, new_pkt_id)
+                # Add new arrival for the new client (used to evaluate the queuing delay at the end)
+                client.addNewArrival(time)
+
                 # insert the record in the queue
                 self.queue.append(client)
 
@@ -110,6 +118,9 @@ class Queue:
                     )
                     self.servers.makeBusy(serv_id)
 
+                    # Update total costs (they will be 0 if not defined)
+                    self.data.tot_serv_costs += self.servers.costs[serv_id]
+
                     if self.n_server is not None:
                         # Update the beginning of the service
                         self.data.serv_busy[serv_id]["begin_last_service"] = time
@@ -121,6 +132,11 @@ class Queue:
 
             else:
                 # Lost client
+                if pkt_type == "A":
+                    self.data.countLosses_B += 1
+                elif pkt_type == "B":
+                    self.data.countLosses_B += 1
+
                 self.data.countLosses += 1
 
                 if DEBUG:
@@ -129,9 +145,14 @@ class Queue:
             # Unlimited length
             self.users += 1
             self.data.n_usr_t.append((self.users, time))
+            self.data.count_types[pkt_type] += 1
 
-            # create a record for the client
-            client = Client(pkt_type, time)
+            new_pkt_id = f"{pkt_type}{self.data.count_types[pkt_type]}"
+
+            ## Create a record for the client
+            client = Client(pkt_type, time, new_pkt_id)
+            # Add new arrival for the new client (used to evaluate the queuing delay at the end)
+            client.addNewArrival(time)
 
             # insert the record in the queue
             self.queue.append(client)
@@ -195,6 +216,7 @@ class Queue:
         FES.put((time + inter_arrival, [self.arr_name, self.rand_pkt_type()]))
 
         ################################
+        # This method will check the possibility to add the packet
         self.addClient(time, FES, event_type)
         ################################
 
@@ -247,6 +269,11 @@ class Queue:
             # do whatever we need to do when clients go away
             if client.type == "A":
                 self.data.delay_A += time - client.arrival_time
+                self.data.delay_pkt_A[client.pkt_ID] = time - client.arrival_times[-1]
+            elif client.type == "B":
+                self.data.delay_B += time - client.arrival_time
+                self.data.delay_pkt_B[client.pkt_ID] = time - client.arrival_times[-1]
+
             self.data.delay += time - client.arrival_time
             self.data.delaysList.append(time - client.arrival_time)
             self.users -= 1
@@ -268,6 +295,9 @@ class Queue:
                 type="expovariate"
             )  # at the start was constant
             self.data.servicesList.append(service_time)
+
+            # Update total costs (they will be 0 if not defined)
+            self.data.tot_serv_costs += self.servers.costs[new_serv_id]
 
             new_served = self.queue[0]
 
