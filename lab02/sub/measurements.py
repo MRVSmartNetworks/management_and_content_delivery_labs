@@ -56,6 +56,9 @@ class Measure:
         self.waitingDelaysList_no_zeros = (
             []
         )  # Without considering the ones that have been directy been served
+        # Also store the time at which the measurements were saved
+        # This is used for the evaluation of the transient
+        self.waiting_delays_times = []
 
         self.avgBuffer = 0  # Average Buffer Occupancy - time average
         # Increased by max(0, n_users - n_servers)*dt each time
@@ -325,6 +328,33 @@ class Measure:
             plt.title("Waiting delay evolution in time")
         plt.xlabel("Client number")
         plt.ylabel("Waiting delay")
+        plt.tight_layout()
+        if img_name is not None:
+            plt.savefig(img_name, dpi=300)
+        plt.show()
+
+    def avgWaitDelayInTime(self, figsize=(12, 5), img_name=None):
+        """
+        avgWaitDelayInTime
+        ---
+        Plot the moving average of the waiting delay in time.
+        This plot can be used to observe the initial transient.
+
+        ### Input parameters
+        - img_name (default None): if not None, save the produced image
+        at the specified path.
+        """
+        plt.figure(figsize=figsize)
+        plt.plot(
+            [
+                sum(self.waitingDelaysList[:i]) / (i)
+                for i in range(1, len(self.waitingDelaysList))
+            ]
+        )
+        plt.title("Average of the waiting delay in time")
+        plt.xlabel("index")
+        plt.ylabel("Average waiting delay")
+        plt.grid()
         plt.tight_layout()
         if img_name is not None:
             plt.savefig(img_name, dpi=300)

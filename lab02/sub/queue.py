@@ -10,14 +10,21 @@ DEBUG = False
 
 class Queue:
     def __init__(
-        self, serv_t, arr_t, queue_len, n_server, event_names, fract=0.5, costs=False
+        self,
+        serv_t,
+        arr_t,
+        queue_len,
+        n_server,
+        event_names,
+        fract=0.5,
+        costs=False,
+        in_transient=False,
     ):
         """
         Queue
         ---
         Class used to model M/G/s/n queuing systems (Poisson inter-arrival times, generic service
         times, variable number of servers and variable queue lenght).
-
 
         ### Input parameters
         - serv_t: average service time (1/serv_rate)
@@ -27,6 +34,10 @@ class Queue:
         - servers: policy initialization
         - event_names: list containing 2 elements - 1st one is the name assigned to the arrivals,
         2nd one is the one assigned to the departure
+        - fract: fraction of packets of type B
+        - costs: bool indicating whether server costs are to be used
+        - in_transient: bool specifying whether the queue is currently in the initial transient;
+        if it is, the measurements are not stored
 
         ### Attributes
         - serv_t: average service time
@@ -41,7 +52,8 @@ class Queue:
         - users: variable tracking the length of the queue
         - servers: 'Server' class object, containing the server(s) and allowing to use them
         - types: list of valid packet types
-        - fract: fraction of elements of class self.types[1] - assuming 2 types...
+        - fract: fraction of elements of class self.types[1] - assuming 2 types
+        - propagation_time: fixed propagation time for the transmission between queues
         """
 
         self.serv_t = serv_t
@@ -63,9 +75,11 @@ class Queue:
 
         self.fract = fract
 
-        self.propagation_time = (
-            0.0  # transimssion delay between MicroDataCenter and CloudDataCenter
-        )
+        # transimssion delay between MicroDataCenter and CloudDataCenter
+        self.propagation_time = 0.0
+
+        # Flag addressing the transient period
+        self.in_transient = in_transient
 
     def addClient(self, time, FES, event_type):
         """
@@ -129,6 +143,7 @@ class Queue:
                     # Get the client - not extracting:
                     cli = self.queue[0]
                     self.data.waitingDelaysList.append(time - cli.arrival_time)
+                    self.data.waiting_delays_times.append(time)
 
             else:
                 # Lost client
@@ -179,6 +194,7 @@ class Queue:
                 # Get the client - not extracting:
                 cli = self.queue[0]
                 self.data.waitingDelaysList.append(time - cli.arrival_time)
+                self.data.waiting_delays_times.append(time)
 
     # arrivals *********************************************************************
     def arrival(self, time, FES, event_type):
@@ -305,6 +321,7 @@ class Queue:
 
             self.data.waitingDelaysList.append(time - new_served.arrival_time)
             self.data.waitingDelaysList_no_zeros.append(time - new_served.arrival_time)
+            self.data.waiting_delays_times.append(time)
 
             # Schedule when the service will end
             FES.put(
@@ -342,3 +359,10 @@ class Queue:
         else:
             type_pkt = "A"
         return type_pkt
+
+    def endTransient(self):
+        """
+        endTransient
+        ---
+        End the transient period by setting the flag 'in_transient' to False.
+        """

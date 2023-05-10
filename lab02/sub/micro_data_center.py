@@ -99,6 +99,7 @@ class MicroDataCenter(Queue):
 
             self.data.waitingDelaysList.append(time - new_served.arrival_time)
             self.data.waitingDelaysList_no_zeros.append(time - new_served.arrival_time)
+            self.data.waiting_delays_times.append(time)
 
             # Schedule when the service will end
             FES.put(
@@ -172,6 +173,7 @@ class MicroDataCenter(Queue):
                     # Get the client - not extracting:
                     cli = self.queue[0]
                     self.data.waitingDelaysList.append(time - cli.arrival_time)
+                    self.data.waiting_delays_times.append(time)
 
             else:
                 # Full self.queue - send the client directly to the cloud
@@ -223,3 +225,4 @@ class MicroDataCenter(Queue):
                 # Get the client - not extracting:
                 cli = self.queue[0]
                 self.data.waitingDelaysList.append(time - cli.arrival_time)
+                self.data.waiting_delays_times.append(time)

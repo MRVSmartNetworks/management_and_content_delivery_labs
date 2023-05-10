@@ -70,56 +70,56 @@ def printResults(sim_time, mdc, cdc, plots=False):
     - plots: bool to choose whether to display figures (plots) or not
     """
     # Task 1(version A). Analysis of the waiting delay
-    if plots and task_1:
-        cdc.data.waitingDelayHist(zeros=True, mean_value=False)
-        cdc.data.waitingDelayHist(zeros=False, mean_value=True)
-        cdc.data.waitingDelayInTime(mean_value=True)
+    if task_1:
+        cdc.data.waitingDelayHist(
+            zeros=True,
+            mean_value=True,
+            img_name="images/task1_wait_delays_hist_cdc.png",
+        )
 
-        mdc.data.plotUsrInTime()
+        ## Plot moving average of the waiting delay (CDC only)
+        cdc.data.avgWaitDelayInTime(img_name="images/task1_average_wait_cdc.png")
 
-        # plt.figure(figsize=(8, 4))
-        # plt.plot(np.linspace(1, sim_time, len(mdc.data.arrivalsList)), mdc.queue)
-        # plt.title("Number of arrival of the system")
-        # plt.xlabel("Simulation time")
-        # plt.ylabel("Inter arrival times of the packets")
-        # plt.show()
-        """ 
-        Some observations on the plot (param: dep_micro: 3s, arr_micro: 10s, dep_cloud: 5s):
-        - Very few bins (the method sets n_bins=sqrt(unique values)), which means that few elements 
-        are actually arriving to the cloud data center
-        - approx. exponential shape (without zeros considered) - this is fine, since the service time is 
-        exp, so waiting time is a residual of exponential... (as in lab 1 I guess, more like gamma 
-        distributions)
-        """
+        # Plotted values:
+        avg_wait_del_time = [
+            sum(cdc.data.waitingDelaysList[:i]) / i
+            for i in range(1, len(cdc.data.waitingDelaysList) + 1)
+        ]
 
-        cdc.data.plotUsrMovingAvg()
-        mdc.data.plotUsrMovingAvg()
-
-        # TODO: Removing warm-up transient
-
+        ### Removing warm-up transient
         # Evaluate mean of waiting delay and then find point in which relative variation becomes low
-        # avg_wait_del = np.mean(cdc.data.waitingDelaysList)
-        # mean_k = np.zeros((round(len(cdc.data.waitingDelaysList) / 2),))
-        # for k in range(round(len(cdc.data.waitingDelaysList) / 2)):
-        #     mean_k[k] = np.mean(cdc.data.waitingDelaysList[k:])
+        avg_wait_del = np.mean(cdc.data.waitingDelaysList)
 
-        # relative_variation = (mean_k - avg_wait_del) / avg_wait_del
+        relative_distance = (avg_wait_del_time - avg_wait_del) / avg_wait_del
 
-        # plt.figure(figsize=(8, 4))
-        # plt.plot(relative_variation, "b", label="relative variation")
-        # plt.plot(
-        #     np.gradient(relative_variation), "g", label="relative variation derivative"
-        # )
-        # plt.title("Relative variation, average waiting delay")
-        # plt.grid()
-        # plt.xlabel("n")
-        # plt.ylabel("R")
-        # plt.tight_layout()
-        # plt.show()
+        # Extract the index at which the relative distance is below the specified value
+        time_instant = min(np.argwhere(abs(relative_distance) < 0.2))[0]
 
-        # Observing the average number of packets in the queue (CDC)
-        # cdc.data.plotUsrInTime(mean_value=True)
-        # mdc.data.plotUsrInTime(mean_value=True)
+        if plots:
+            plt.figure(figsize=(8, 4))
+            plt.plot(relative_distance, "b", label="Relative variation")
+            plt.plot(
+                np.gradient(relative_distance),
+                "g",
+                label="Relative variation derivative",
+            )
+            plt.axvline(
+                time_instant, linewidth=0.5, color="r", label="End of initial transient"
+            )
+            plt.title("Relative variation, average waiting delay")
+            plt.grid()
+            plt.xlabel("n")
+            plt.ylabel("R")
+            plt.legend()
+            plt.tight_layout()
+            plt.savefig("images/task1_transient_location.png")
+            plt.show()
+
+        # The value present in 'time_instant' is the index to be used to find the actual
+        # value of the time instant with the list 'waiting_delays_times'
+        end_of_transient_time = cdc.data.waiting_delays_times[time_instant]
+
+        print(f"The initial transient ends at time t = {end_of_transient_time}")
 
     if DEBUG:
         print(
@@ -150,7 +150,7 @@ def printResults(sim_time, mdc, cdc, plots=False):
             )
         # 4.c - Total cost
         if task_4c:
-            print("\n+––––––––––––– Task 4c –––––––––––––+")
+            print("\n+------------- Task 4c -------------+")
 
             print(
                 f"Total operational cost: {mdc.data.tot_serv_costs + cdc.data.tot_serv_costs}"
@@ -221,6 +221,8 @@ def run(
         n_server=n_serv_1,
         event_names=["arrival_micro", "departure_micro"],
         costs=server_costs,
+        fract=fract,
+        in_transient=True,
     )
 
     CDC = CloudDataCenter(
@@ -230,6 +232,8 @@ def run(
         n_server=n_serv_2,
         event_names=["arrival_cloud", "departure_cloud"],
         costs=server_costs,
+        fract=fract,
+        in_transient=True,
     )
 
     # Pick at random the first packet given the fraction of B
@@ -290,6 +294,7 @@ def run(
 if __name__ == "__main__":
     random.seed(1)
     sim_time = 50000
+    initial_transient_upper_bound = 2000
     fract = 0.5
 
     if basicRun:
@@ -309,13 +314,14 @@ if __name__ == "__main__":
 
     ################ Task 1. Anlysis of CDC
     if task_1:
+        print("+------------------ Task 1 ------------------+")
         run(
             sim_time,
             fract=fract,
             arr_t=3.0,
-            serv_t_1=2.0,
+            serv_t_1=3.2,
             q1_len=10,
-            serv_t_2=4.0,
+            serv_t_2=6.0,
             q2_len=20,
             results=True,
             plots=True,
@@ -323,6 +329,7 @@ if __name__ == "__main__":
 
     ################ Task 2. Impact of micro data center queue length on the performance
     if task_2:
+        print("+------------------ Task 2 ------------------+")
         # Iterations
         arr_t = 3.0
         n_iter = 15
@@ -473,6 +480,7 @@ if __name__ == "__main__":
     # Threshold T_q to set desired max average time
     T_q = None
     if task_3 and T_q is not None:
+        print("+------------------ Task 3 ------------------+")
         # a) Find min serv rate to reduce delay A below T_q
         serv_r_list = np.arange(0.1, 0.8, 0.1)
         min_found = False
@@ -515,6 +523,7 @@ if __name__ == "__main__":
 
     ########### Task 4. Analysis of the system with multi-server and opertational costs
     if task_4:
+        print("+------------------ Task 4 ------------------+")
         # TODO: assign operational cost to each edge node and to the cloud servers
 
         # a) Vary packet arrival rate over time and analyze system performance
