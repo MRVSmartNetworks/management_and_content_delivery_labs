@@ -212,6 +212,8 @@ def run(
     - n_serv_2: number of servers, queue 2
     - results: bool to choose whether to print the results (stdout) or not
     - plots: bool to choose whether to display the plots or not
+    - transient_duration: value in time after which the initial transient
+    is finished (empirical)
     """
     FES = PriorityQueue()
 
@@ -257,6 +259,10 @@ def run(
 
     FES.put((0, ["arrival_micro", type_pkt, 0]))
 
+    if transient_duration != 0:
+        print(f"Transient duration: {transient_duration}")
+
+    transient_flag = True
     while time < step_time:
         # a = tm.time()
         (time, event_type) = FES.get()
@@ -265,9 +271,10 @@ def run(
         # print(f"Current time: {time} - event: {event_type}")
 
         # tm.sleep(2)
-        if time >= transient_duration:
+        if time >= transient_duration and transient_flag:
             MDC.endTransient()
             CDC.endTransient()
+            transient_flag = False
 
         if event_type[0] == "arrival_micro":
             MDC.arrival(time, FES, event_type)

@@ -321,8 +321,9 @@ class Queue:
             if not self.in_transient:
                 self.data.delay += time - client.arrival_time
                 self.data.delaysList.append(time - client.arrival_time)
-                self.users -= 1
                 self.data.n_usr_t.append((self.users, time))
+
+            self.users -= 1
 
         can_add = False
 
@@ -398,3 +399,4 @@ class Queue:
         ---
         End the transient period by setting the flag 'in_transient' to False.
         """
+        self.in_transient = False
