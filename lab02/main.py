@@ -14,11 +14,7 @@ task_1 = False
 task_2 = False
 task_3 = False
 task_4 = True
-<<<<<<< HEAD
 task_4a = False
-=======
-task_4a = True
->>>>>>> lab02_fede
 task_4b = False
 task_4c = False
 task_4d = False
@@ -147,7 +143,7 @@ def printResults(sim_time, mdc, cdc, plots=False):
                 "\nCLOUD DATA CENTER\n",
                 f"Queuing delay: {cdc.data.delay}\n",
                 f"Packet drop probability: {cdc.data.countLosses/cdc.data.arr}\n",
-                f"Edge nodes total costs: {cdc.data.tot_serv_costs}\n", 
+                f"Edge nodes total costs: {cdc.data.tot_serv_costs}\n",
                 "\nMICRO DATA CENTER\n",
                 f"Queuing delay: {mdc.data.delay}\n",
                 f"Packet drop probability: {mdc.data.countLosses/mdc.data.arr}\n2",
@@ -163,7 +159,6 @@ def printResults(sim_time, mdc, cdc, plots=False):
             print(f"  - Total cost, MDC: {mdc.data.tot_serv_costs}")
             print(f"  - Total cost, CDC: {cdc.data.tot_serv_costs}")
 
-<<<<<<< HEAD
         # 4.c - maximum queuing delay, packets A
         total_queuing_delays_A = {}
         for id in mdc.data.delay_pkt_A.keys():
@@ -177,12 +172,6 @@ def printResults(sim_time, mdc, cdc, plots=False):
         max_queuing_delay_A = max(total_queuing_delays_A.values())
 
         print(f"Maximum queuing delay, packets A: {max_queuing_delay_A}")
-=======
-            # 4.c - maximum queuing delay
-
-            print()
-        
->>>>>>> lab02_fede
 
     return mdc.data, cdc.data
 
@@ -528,13 +517,6 @@ if __name__ == "__main__":
     ########### Task 4. Analysis of the system with multi-server and opertational costs
     if task_4:
         # TODO: assign operational cost to each edge node and to the cloud servers
-<<<<<<< HEAD
-        task_4a = False
-        task_4b = False
-        task_4c = True
-        task_4d = False
-=======
->>>>>>> lab02_fede
 
         # a) Vary packet arrival rate over time and analyze system performance
         if task_4a:
@@ -561,7 +543,6 @@ if __name__ == "__main__":
                 results=True,
                 plots=False,
             )
-
 
         if task_4c:
             """
