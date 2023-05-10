@@ -10,10 +10,10 @@ import time as tm
 DEBUG = False
 
 basicRun = False
-task_1 = False
+task_1 = True
 task_2 = False
 task_3 = False
-task_4 = True
+task_4 = False
 task_4a = False
 task_4b = False
 task_4c = True
@@ -92,35 +92,34 @@ def printResults(sim_time, mdc, cdc, plots=False):
         distributions)
         """
 
+        cdc.data.plotUsrMovingAvg()
+        mdc.data.plotUsrMovingAvg()
+
         # Removing warm-up transient
 
-        # # Evaluate mean of waiting delay and then find point in which relative variation becomes low
-        # avg_wait_del = np.mean(cdc.data.waitingDelaysList)
-        # mean_k = np.zeros((round(len(cdc.data.waitingDelaysList) / 2),))
-        # for k in range(round(len(cdc.data.waitingDelaysList) / 2)):
-        #     mean_k[k] = np.mean(cdc.data.waitingDelaysList[k:])
+        # Evaluate mean of waiting delay and then find point in which relative variation becomes low
+        avg_wait_del = np.mean(cdc.data.waitingDelaysList)
+        mean_k = np.zeros((round(len(cdc.data.waitingDelaysList) / 2),))
+        for k in range(round(len(cdc.data.waitingDelaysList) / 2)):
+            mean_k[k] = np.mean(cdc.data.waitingDelaysList[k:])
 
-        # relative_variation = (mean_k - avg_wait_del) / avg_wait_del
+        relative_variation = (mean_k - avg_wait_del) / avg_wait_del
 
-        # plt.figure(figsize=(8, 4))
-        # plt.plot(relative_variation, "b", label="relative variation")
-        # plt.plot(
-        #     np.gradient(relative_variation), "g", label="relative variation derivative"
-        # )
-        # plt.title("Relative variation, average waiting delay")
-        # plt.grid()
-        # plt.xlabel("n")
-        # plt.ylabel("R")
-        # plt.tight_layout()
-        # plt.show()
+        plt.figure(figsize=(8, 4))
+        plt.plot(relative_variation, "b", label="relative variation")
+        plt.plot(
+            np.gradient(relative_variation), "g", label="relative variation derivative"
+        )
+        plt.title("Relative variation, average waiting delay")
+        plt.grid()
+        plt.xlabel("n")
+        plt.ylabel("R")
+        plt.tight_layout()
+        plt.show()
 
         # Observing the average number of packets in the queue (CDC)
-        cdc.data.plotUsrInTime(mean_value=True)
-        mdc.data.plotUsrInTime(mean_value=True)
-
-    """
-    The warm-up transient cannot be found...
-    """
+        # cdc.data.plotUsrInTime(mean_value=True)
+        # mdc.data.plotUsrInTime(mean_value=True)
 
     if DEBUG:
         print(
@@ -311,7 +310,7 @@ if __name__ == "__main__":
     ################ Task 1. Anlysis of CDC
     if task_1:
         run(
-            sim_time=5000,
+            sim_time,
             fract=fract,
             arr_t=3.0,
             serv_t_1=2.0,

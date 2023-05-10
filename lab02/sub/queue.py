@@ -202,6 +202,7 @@ class Queue:
         # cumulate statistics
         self.data.arr += 1
         self.data.ut += self.users * (time - self.data.oldT)
+        self.data.ut_in_time.append([time, self.data.ut])
         self.data.avgBuffer += max(0, self.users - self.n_server) * (
             time - self.data.oldT
         )
@@ -243,6 +244,7 @@ class Queue:
         # cumulate statistics
         self.data.dep += 1
         self.data.ut += self.users * (time - self.data.oldT)
+        self.data.ut_in_time.append([time, self.data.ut])
         self.data.avgBuffer += max(0, self.users - self.n_server) * (
             time - self.data.oldT
         )

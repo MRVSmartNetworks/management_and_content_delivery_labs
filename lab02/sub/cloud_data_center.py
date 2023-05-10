@@ -28,6 +28,7 @@ class CloudDataCenter(Queue):
         # cumulate statistics
         self.data.arr += 1  # Regardless of packet type
         self.data.ut += self.users * (time - self.data.oldT)
+        self.data.ut_in_time.append([time, self.data.ut])
         self.data.avgBuffer += max(0, self.users - self.n_server) * (
             time - self.data.oldT
         )

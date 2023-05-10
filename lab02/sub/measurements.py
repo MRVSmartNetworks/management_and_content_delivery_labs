@@ -18,6 +18,8 @@ class Measure:
         self.dep = Ndep  # Count departures (TRANSMITTED PACKETS)
         # Count average number of users in time - add to ut the number of clients times the time span it remained constant
         self.ut = NAveraegUser  # N packets * dt
+        self.ut_in_time = []
+
         self.n_usr_t = [
             (0, 0)
         ]  # Number of users in time, append tuple (n_user, current time) at each measurement
@@ -179,6 +181,24 @@ class Measure:
         if img_name is not None:
             plt.savefig(img_name, dpi=300)
 
+        plt.show()
+
+    def plotUsrMovingAvg(self, img_name=None):
+        """
+        Plot the (time) average of the users in time, i.e., (n_users * dt) / time
+        """
+        plt.figure(figsize=(12, 5))
+        plt.plot(
+            [v[0] for v in self.ut_in_time[1:]],
+            [v[1] / v[0] for v in self.ut_in_time[1:]],
+        )
+        plt.title("Moving average of the number of packets in the queue")
+        plt.grid()
+        plt.xlabel("Time")
+        plt.ylabel("Time avg. users")
+        plt.tight_layout()
+        if img_name is not None:
+            plt.savefig(img_name, dpi=300)
         plt.show()
 
     def plotArrivalsHist(self, mean_value=False, img_name=None):
