@@ -2,27 +2,28 @@ import numpy as np
 import random
 import warnings
 
+
 # ******************************************************************************
 # Server
 # ******************************************************************************
 class Server(object):
     # constructor
-    def __init__(self, n_serv, serv_t, policy="first_idle"):
+    def __init__(self, n_serv, serv_t, policy="first_idle", costs=None):
         """
-        Class used to model servers in the queuing system. 
+        Class used to model servers in the queuing system.
 
         Parameters:
         - n_serv: number of servers
-        - serv_t: average service time; if one single value it is the value for all 
-        servers, if it is a list, it contains the values for each server (the 
+        - serv_t: average service time; if one single value it is the value for all
+        servers, if it is a list, it contains the values for each server (the
         length must be n_serv)
-        - policy: it is the policy for the choice of the server; default: 
+        - policy: it is the policy for the choice of the server; default:
         'first_idle'
 
         Attributes:
-        - 
+        -
         """
-        
+
         # Case n_serv = None: ???????
 
         self.n_servers = n_serv
@@ -30,30 +31,30 @@ class Server(object):
         if n_serv is None:
             # Unlimited servers
             self.valid_policies = [
-                "first_idle"            # Only policy for the infinite n. of servers - keep on adding... (cumbersome)
+                "first_idle"  # Only policy for the infinite n. of servers - keep on adding... (cumbersome)
             ]
 
-            # The service rate for the case of infinite servers is a list containing one single 
+            # The service rate for the case of infinite servers is a list containing one single
             # value (the index self.current will always stay the same)
             if isinstance(serv_t, int) or isinstance(serv_t, float):
-                self.serv_rates = [1./serv_t]
+                self.serv_rates = [1.0 / serv_t]
             elif isinstance(serv_t, list) and len(serv_t) == 1:
-                self.serv_rates = [1./x for x in serv_t]
+                self.serv_rates = [1.0 / x for x in serv_t]
             else:
                 raise ValueError("The value for 'serv_rate' is wrong!")
 
         else:
             # Limited servers
             self.valid_policies = [
-                "first_idle",           # The next client is served by the 1st idle server
-                "round_robin",           # The assignment is done in a round robin fashion (the client is assigned to server 'i', the next one to server 'i+1')
-                "faster_first"
+                "first_idle",  # The next client is served by the 1st idle server
+                "round_robin",  # The assignment is done in a round robin fashion (the client is assigned to server 'i', the next one to server 'i+1')
+                "faster_first",
             ]
 
             if isinstance(serv_t, int) or isinstance(serv_t, float):
-                self.serv_rates = [1./serv_t] * n_serv
+                self.serv_rates = [1.0 / serv_t] * n_serv
             elif isinstance(serv_t, list) and len(serv_t) == n_serv:
-                self.serv_rates = [1./x for x in serv_t]
+                self.serv_rates = [1.0 / x for x in serv_t]
             else:
                 raise ValueError("The value for 'serv_rate' is wrong!")
 
@@ -68,10 +69,15 @@ class Server(object):
             # Whether each server is idle or not - init all to True (all idle)
             self.idle = [True] * n_serv
 
+            # if costs is not None:
+            self.costs = self.serv_rates
+
         # 'current' is used to track the choice of the next server
-        # NOTE: if the n. of servers is infinite, the number 'current' will always stay 0 
+        # NOTE: if the n. of servers is infinite, the number 'current' will always stay 0
         # (it is instantiated for simplicity)
+
         self.current = 0
+        self.cost = self.serv_rates * 10
 
     # ******************************************************************************
     # Private
@@ -93,7 +99,7 @@ class Server(object):
                     self.current += 1
                     self.current = self.current % self.n_servers
             elif self.policy == "round_robin":
-                # The policy 'round_robin' looks for a free server in an ordered way 
+                # The policy 'round_robin' looks for a free server in an ordered way
                 self.current += 1
                 self.current = self.current % self.n_servers
                 while not self.idle[self.current]:
@@ -101,7 +107,7 @@ class Server(object):
                     self.current = self.current % self.n_servers
             elif self.policy == "faster_first":
                 # Sort the service rates (decreasing order)
-                sorted = np.argsort(-1*np.array(self.serv_rates))
+                sorted = np.argsort(-1 * np.array(self.serv_rates))
                 self.current = sorted[0]
                 i = 1
                 while not self.idle[self.current]:
@@ -125,12 +131,12 @@ class Server(object):
 
         Parameters:
         - type: distribution type
-            -> Possible values: 
+            -> Possible values:
             > expovariate: exponential service time
             > constant: constant service time equal to 1/serv_rate of current server
             > uniform: uniform in (0, 2/serv_rate) of current server
         """
-        # Update 
+        # Update
         self.chooseNextServer()
 
         if type == "expovariate":
@@ -138,20 +144,20 @@ class Server(object):
         elif type == "constant":
             # The provided "mean" time is actually the value itself...
             # Need to re-invert the service rate to find the time
-            service_time = 1/self.serv_rates[self.current]
+            service_time = 1 / self.serv_rates[self.current]
         elif type == "uniform":
             # Uniform distribution; the mean is the specified parameter
             # Need to re-invert the rate to get the mean
-            service_time = random.uniform(0, 2/self.serv_rates[self.current])
+            service_time = random.uniform(0, 2 / self.serv_rates[self.current])
         else:
             raise ValueError(f"Invalid distribution type '{type}'!")
-        
+
         return service_time, self.current
 
     def makeIdle(self, serv_id):
         """
         Change the state of server 'serv_id' from busy to idle.
-        A warning is raised if the server was already idle (something is 
+        A warning is raised if the server was already idle (something is
         wrong with the program calling this method).
         """
 
@@ -164,22 +170,25 @@ class Server(object):
             # No need to update - infinite n. of servers
             pass
         else:
-            raise ValueError(f"The provided ID {serv_id} exceeds the maximum number of servers {self.n_servers}")
+            raise ValueError(
+                f"The provided ID {serv_id} exceeds the maximum number of servers {self.n_servers}"
+            )
 
     def makeBusy(self, serv_id):
         """
         Change the state of server 'serv_id' from idle to busy.
-        A warning is raised if the server was already busy (something is 
+        A warning is raised if the server was already busy (something is
         wrong with the program calling this method).
         """
         if self.n_servers is not None and serv_id < self.n_servers:
             if not self.idle[serv_id]:
                 warnings.warn(f"The server {serv_id} was already busy!")
-            
+
             self.idle[serv_id] = False
         elif self.n_servers is None:
             # No need to update - infinite n. of servers
             pass
         else:
-            raise ValueError(f"The provided ID {serv_id} exceeds the maximum number of servers {self.n_servers}")
-
+            raise ValueError(
+                f"The provided ID {serv_id} exceeds the maximum number of servers {self.n_servers}"
+            )
