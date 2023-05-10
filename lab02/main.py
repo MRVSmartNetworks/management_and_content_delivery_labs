@@ -14,7 +14,11 @@ task_1 = False
 task_2 = False
 task_3 = False
 task_4 = True
+<<<<<<< HEAD
 task_4a = False
+=======
+task_4a = True
+>>>>>>> lab02_fede
 task_4b = False
 task_4c = False
 task_4d = False
@@ -134,15 +138,32 @@ def printResults(sim_time, mdc, cdc, plots=False):
 
     ##### Results about point 4
     if task_4:
+        if task_4b:
+            print(
+                f"\nWHOLE SYSTEM\n",
+                f"Queuing delay: {cdc.data.delay + mdc.data.delay}\n",
+                "Packet drop probability:",
+                f"{(cdc.data.countLosses + mdc.data.countLosses)/(cdc.data.arr + mdc.data.arr)}\n",
+                "\nCLOUD DATA CENTER\n",
+                f"Queuing delay: {cdc.data.delay}\n",
+                f"Packet drop probability: {cdc.data.countLosses/cdc.data.arr}\n",
+                f"Edge nodes total costs: {cdc.data.tot_serv_costs}\n", 
+                "\nMICRO DATA CENTER\n",
+                f"Queuing delay: {mdc.data.delay}\n",
+                f"Packet drop probability: {mdc.data.countLosses/mdc.data.arr}\n2",
+                f"Cloud servers total costs: {cdc.data.tot_serv_costs}",
+            )
         # 4.c - Total cost
-        print("\n+––––––––––––– Task 4c –––––––––––––+")
+        if task_4c:
+            print("\n+––––––––––––– Task 4c –––––––––––––+")
 
-        print(
-            f"Total operational cost: {mdc.data.tot_serv_costs + cdc.data.tot_serv_costs}"
-        )
-        print(f"  - Total cost, MDC: {mdc.data.tot_serv_costs}")
-        print(f"  - Total cost, CDC: {cdc.data.tot_serv_costs}")
+            print(
+                f"Total operational cost: {mdc.data.tot_serv_costs + cdc.data.tot_serv_costs}"
+            )
+            print(f"  - Total cost, MDC: {mdc.data.tot_serv_costs}")
+            print(f"  - Total cost, CDC: {cdc.data.tot_serv_costs}")
 
+<<<<<<< HEAD
         # 4.c - maximum queuing delay, packets A
         total_queuing_delays_A = {}
         for id in mdc.data.delay_pkt_A.keys():
@@ -156,6 +177,12 @@ def printResults(sim_time, mdc, cdc, plots=False):
         max_queuing_delay_A = max(total_queuing_delays_A.values())
 
         print(f"Maximum queuing delay, packets A: {max_queuing_delay_A}")
+=======
+            # 4.c - maximum queuing delay
+
+            print()
+        
+>>>>>>> lab02_fede
 
     return mdc.data, cdc.data
 
@@ -501,10 +528,13 @@ if __name__ == "__main__":
     ########### Task 4. Analysis of the system with multi-server and opertational costs
     if task_4:
         # TODO: assign operational cost to each edge node and to the cloud servers
+<<<<<<< HEAD
         task_4a = False
         task_4b = False
         task_4c = True
         task_4d = False
+=======
+>>>>>>> lab02_fede
 
         # a) Vary packet arrival rate over time and analyze system performance
         if task_4a:
@@ -527,22 +557,11 @@ if __name__ == "__main__":
                 n_serv_1=4,
                 n_serv_2=4,
                 serv_t_2=[2, 6, 6, 10],
+                server_costs=False,
                 results=True,
                 plots=False,
             )
-            print(
-                f"\nWHOLE SYSTEM\n"
-                f"Queuing delay: {res_cdc.delay + res_mdc.delay}\n"
-                "Packet drop probability:"
-                f"{(res_cdc.countLosses + res_mdc.countLosses)/(res_cdc.arr + res_mdc.arr)}\n"
-                "\nCLOUD DATA CENTER\n"
-                f"Queuing delay: {res_cdc.delay}\n"
-                f"Packet drop probability: {res_cdc.countLosses/res_cdc.arr}\n"
-                "\nMICRO DATA CENTER\n"
-                f"Queuing delay: {res_mdc.delay}\n"
-                f"Packet drop probability: {res_mdc.countLosses/res_mdc.arr}"
-                f"Cloud servers total costs: {res_cdc.tot_serv_costs}"
-            )
+
 
         if task_4c:
             """
