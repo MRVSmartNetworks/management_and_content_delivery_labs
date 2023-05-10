@@ -10,9 +10,14 @@ import time as tm
 DEBUG = False
 
 basicRun = False
+task_1 = False
 task_2 = False
 task_3 = False
 task_4 = True
+task_4a = False
+task_4b = False
+task_4c = False
+task_4d = False
 
 """
 Version:
@@ -65,7 +70,7 @@ def printResults(sim_time, mdc, cdc, plots=False):
     - plots: bool to choose whether to display figures (plots) or not
     """
     # Task 1(version A). Analysis of the waiting delay
-    if plots:
+    if plots and task_1:
         cdc.data.waitingDelayHist(zeros=True, mean_value=False)
         cdc.data.waitingDelayHist(zeros=False, mean_value=True)
         cdc.data.waitingDelayInTime(mean_value=True)
@@ -78,16 +83,15 @@ def printResults(sim_time, mdc, cdc, plots=False):
         # plt.xlabel("Simulation time")
         # plt.ylabel("Inter arrival times of the packets")
         # plt.show()
-    """ 
-    Some observations on the plot (param: dep_micro: 3s, arr_micro: 10s, dep_cloud: 5s):
-    - Very few bins (the method sets n_bins=sqrt(unique values)), which means that few elements 
-    are actually arriving to the cloud data center
-    - approx. exponential shape (without zeros considered) - this is fine, since the service time is 
-    exp, so waiting time is a residual of exponential... (as in lab 1 I guess, more like gamma 
-    distributions)
-    """
+        """ 
+        Some observations on the plot (param: dep_micro: 3s, arr_micro: 10s, dep_cloud: 5s):
+        - Very few bins (the method sets n_bins=sqrt(unique values)), which means that few elements 
+        are actually arriving to the cloud data center
+        - approx. exponential shape (without zeros considered) - this is fine, since the service time is 
+        exp, so waiting time is a residual of exponential... (as in lab 1 I guess, more like gamma 
+        distributions)
+        """
 
-    if plots:
         # Removing warm-up transient
 
         # # Evaluate mean of waiting delay and then find point in which relative variation becomes low
@@ -139,9 +143,19 @@ def printResults(sim_time, mdc, cdc, plots=False):
         print(f"  - Total cost, MDC: {mdc.data.tot_serv_costs}")
         print(f"  - Total cost, CDC: {cdc.data.tot_serv_costs}")
 
-        # 4.c - maximum queuing delay
+        # 4.c - maximum queuing delay, packets A
+        total_queuing_delays_A = {}
+        for id in mdc.data.delay_pkt_A.keys():
+            if id in cdc.data.delay_pkt_A:
+                total_queuing_delays_A[id] = (
+                    mdc.data.delay_pkt_A[id] + cdc.data.delay_pkt_A[id]
+                )
+            else:
+                total_queuing_delays_A[id] = mdc.data.delay_pkt_A[id]
 
-        print()
+        max_queuing_delay_A = max(total_queuing_delays_A.values())
+
+        print(f"Maximum queuing delay, packets A: {max_queuing_delay_A}")
 
     return mdc.data, cdc.data
 
@@ -276,7 +290,22 @@ if __name__ == "__main__":
             plots=True,
         )
 
-    ###########################
+    ##############################################################
+
+    ################ Task 1. Anlysis of CDC
+    if task_1:
+        run(
+            sim_time=5000,
+            fract=fract,
+            arr_t=3.0,
+            serv_t_1=2.0,
+            q1_len=10,
+            serv_t_2=4.0,
+            q2_len=20,
+            results=True,
+            plots=True,
+        )
+
     ################ Task 2. Impact of micro data center queue length on the performance
     if task_2:
         # Iterations
@@ -472,9 +501,9 @@ if __name__ == "__main__":
     ########### Task 4. Analysis of the system with multi-server and opertational costs
     if task_4:
         # TODO: assign operational cost to each edge node and to the cloud servers
-        task_4a = True
+        task_4a = False
         task_4b = False
-        task_4c = False
+        task_4c = True
         task_4d = False
 
         # a) Vary packet arrival rate over time and analyze system performance

@@ -62,8 +62,10 @@ class MicroDataCenter(Queue):
             # do whatever we need to do when clients go away
             if client.type == "A":
                 self.data.delay_A += time - client.arrival_time
+                self.data.delay_pkt_A[client.pkt_ID] = time - client.arrival_times[-1]
             elif client.type == "B":
                 self.data.delay_B += time - client.arrival_time
+                self.data.delay_pkt_B[client.pkt_ID] = time - client.arrival_times[-1]
 
             self.data.delay += time - client.arrival_time
             self.data.delaysList.append(time - client.arrival_time)
@@ -127,8 +129,15 @@ class MicroDataCenter(Queue):
             if self.users < self.queue_len:
                 self.users += 1
                 self.data.n_usr_t.append((self.users, time))
-                # create a record for the client
-                client = Client(pkt_type, time)
+                self.data.count_types[pkt_type] += 1
+
+                new_pkt_id = f"{pkt_type}{self.data.count_types[pkt_type]}"
+
+                ## Create a record for the client
+                client = Client(pkt_type, time, new_pkt_id)
+                # Add new arrival for the new client (used to evaluate the queuing delay at the end)
+                client.addNewArrival(time)
+
                 # insert the record in the self.queue
                 self.queue.append(client)
 

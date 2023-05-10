@@ -81,11 +81,10 @@ class Server(object):
                 self.costs = [0 for i in range(n_serv)]
 
         # 'current' is used to track the choice of the next server
-        # NOTE: if the n. of servers is infinite, the number 'current' will always stay 0
+        # NOTE: if the n. of servers is infinite (or 1), the number 'current' will always stay 0
         # (it is instantiated for simplicity)
 
         self.current = 0
-        self.cost = self.serv_rates * 10
 
     # ******************************************************************************
     # Private
@@ -214,7 +213,9 @@ class Server(object):
         -> The cost is equal to the service rate.
         """
         if rates is None:
-            self.costs = self.serv_rates
+            costs = self.serv_rates
         else:
             # Avoidable
-            self.costs = rates
+            costs = rates
+
+        return costs
