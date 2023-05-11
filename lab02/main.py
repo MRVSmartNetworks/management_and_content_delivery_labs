@@ -10,14 +10,16 @@ import time as tm
 DEBUG = False
 
 basicRun = False
-task_1 = True
+task_1 = False
 task_2 = False
 task_3 = False
-task_4 = False
+task_4 = True
 task_4a = False
 task_4b = False
 task_4c = True
-task_4d = False
+task_4d = True
+
+T_q = 50    # thresh of maximum average queuing time for pkt A
 
 """
 Version:
@@ -149,8 +151,8 @@ def printResults(sim_time, mdc, cdc, plots=False):
                 f"Cloud servers total costs: {cdc.data.tot_serv_costs}",
             )
         # 4.c - Total cost
-        if task_4c:
-            print("\n+------------- Task 4c -------------+")
+        if task_4c or task_4d:
+            print("\n+---------------------------+")
 
             print(
                 f"Total operational cost: {mdc.data.tot_serv_costs + cdc.data.tot_serv_costs}"
@@ -171,6 +173,24 @@ def printResults(sim_time, mdc, cdc, plots=False):
         max_queuing_delay_A = max(total_queuing_delays_A.values())
 
         print(f"Maximum queuing delay, packets A: {max_queuing_delay_A}")
+        print(f"Loss probability, packets A: {(cdc.data.countLosses_A +mdc.data.countLosses_A)/(cdc.data.arr + mdc.data.arr) }")
+       
+
+        total_queuing_delays_B = {}
+        for id in mdc.data.delay_pkt_B.keys():
+            if id in cdc.data.delay_pkt_B:
+                total_queuing_delays_B[id] = (
+                    mdc.data.delay_pkt_B[id] + cdc.data.delay_pkt_B[id]
+                )
+            else:
+                total_queuing_delays_B[id] = mdc.data.delay_pkt_B[id]
+
+        max_queuing_delay_B = max(total_queuing_delays_B.values())
+        
+        print(f"Maximum queuing delay, packets B: {max_queuing_delay_B}")
+        print(f"Loss probability, packets B: {(cdc.data.countLosses_B +mdc.data.countLosses_B)/(cdc.data.arr + mdc.data.arr) }")
+
+
 
     return mdc.data, cdc.data
 
@@ -478,19 +498,31 @@ if __name__ == "__main__":
 
     ################ Task 3. Analysis on packets A average time in the system
     # Threshold T_q to set desired max average time
-    T_q = None
+    T_q = 50
     if task_3 and T_q is not None:
         print("+------------------ Task 3 ------------------+")
+        
         # a) Find min serv rate to reduce delay A below T_q
+        print("+------------------ Task a ------------------+")
         serv_r_list = np.arange(0.1, 0.8, 0.1)
         min_found = False
         delay_list = []
         for serv_r in serv_r_list:
             res_mdc, res_cdc = run(sim_time, fract, serv_t_1=1.0 / serv_r, results=True)
-            delay_A = (res_cdc.delay_A + res_mdc.delay_A) / (res_cdc.dep + res_mdc.dep)
-            delay_list.append(delay_A)
-            if delay_A < T_q and not min_found:
-                print(f"\nMinimum service rate is {serv_r}")
+
+            res_mdc.delay_pkt_A
+            total_queuing_delays_A = {}
+            for id in res_mdc.delay_pkt_A.keys():
+                if id in res_cdc.delay_pkt_A:
+                    total_queuing_delays_A[id] = (
+                        res_mdc.delay_pkt_A[id] + res_cdc.delay_pkt_A[id]
+                    )
+                else:
+                    total_queuing_delays_A[id] = res_mdc.delay_pkt_A[id]
+            max_queuing_delay_A = max(total_queuing_delays_A.values())
+            delay_list.append(max_queuing_delay_A)
+            if max_queuing_delay_A < T_q and not min_found:
+                print(f"\nMinimum service rate is {serv_r}\n")
                 min_found = True
         plt.figure()
         plt.title("Min serv_r to reduce delay_A below T_q")
@@ -499,17 +531,29 @@ if __name__ == "__main__":
         plt.axhline(T_q, linestyle="--")
         plt.plot(list(serv_r_list), delay_list)
 
-        # a) Find min no. of edge nodes to reduce delay A below T_q
-        n_serv_list = range(1, 20)
+        # b) Find min no. of edge nodes to reduce delay A below T_q
+        print("+------------------ Task b ------------------+")
+        n_serv_list = range(1, 30)
         min_found = False
         delay_list = []
         for n_serv in n_serv_list:
             res_mdc, res_cdc = run(
-                sim_time, fract, n_serv_1=n_serv, serv_t_1=15.0, results=True
+                sim_time, fract, n_serv_1=n_serv, serv_t_1=7.0, results=True
             )
-            delay_A = (res_cdc.delay_A + res_mdc.delay_A) / (res_cdc.dep + res_mdc.dep)
-            delay_list.append(delay_A)
-            if delay_A < T_q and not min_found:
+            total_queuing_delays_A = {}
+            for id in res_mdc.delay_pkt_A.keys():
+                if id in res_cdc.delay_pkt_A:
+                    total_queuing_delays_A[id] = (
+                        res_mdc.delay_pkt_A[id] + res_cdc.delay_pkt_A[id]
+                    )
+                else:
+                    total_queuing_delays_A[id] = res_mdc.delay_pkt_A[id]
+
+            max_queuing_delay_A = max(total_queuing_delays_A.values())
+            delay_list.append(max_queuing_delay_A)
+            # delay_A = (res_cdc.delay_A + res_mdc.delay_A) / (res_cdc.dep + res_mdc.dep)
+            # delay_list.append(delay_A)
+            if max_queuing_delay_A < T_q and not min_found:
                 print(f"\nMinimum no. of edges is {n_serv}")
                 min_found = True
 
@@ -552,7 +596,7 @@ if __name__ == "__main__":
                 plots=False,
             )
 
-        if task_4c:
+        if task_4c and T_q is not None:
             """
             Set a value of f > 0.5 and define a desired threshold on the
             maximum operational cost.
@@ -569,10 +613,10 @@ if __name__ == "__main__":
             n_serv_2 = 4
             # different server types compinations
             serv_t_list = [[10, 10, 10, 10], [1, 1, 1, 1], [5, 5, 5, 5], [1, 1, 10, 10]]
-
-            T_q = 1000  # To be reviewed
-
+            print("\n+--------- Task 4c ----------+")
             print(f"\nMaximum cost threshold: {max_oper_cost}")
+            print(f"Queuing delay threshold: {T_q}")
+            print("+------------------------------------+")
             # TODO: check if constraints of task 3 are respected
             for serv_t_2 in serv_t_list:
                 print("\nServer arrival time configuration:", serv_t_2)
@@ -598,15 +642,18 @@ if __name__ == "__main__":
                     type A and packets of type B are differently affected in terms of delay and
                     packet drop probability
                 """
-                n_serv_2 /= 2
-
-                res_cdc_d, res_mdc_d = run(
-                    sim_time,
-                    f,
-                    arr_t=1.0,
-                    n_serv_1=4,
-                    n_serv_2=n_serv_2,
-                    serv_t_2=[2, 6, 6, 10],
-                    results=True,
-                    plots=False,
-                )
+                n_serv_2 = int(n_serv_2 / 2)
+                serv_t_list = [[1, 10], [10, 10], [1, 1]]
+                print("\n\n+--------- Task 4d ----------+")
+                for serv_t_2 in serv_t_list:
+                    print("\nServer arrival time configuration:", serv_t_2)
+                    res_mdc, res_cdc = run(
+                        sim_time,
+                        f,
+                        arr_t=1.0,
+                        n_serv_1=4,
+                        n_serv_2=n_serv_2,
+                        serv_t_2=serv_t_2,
+                        server_costs=True,
+                        results=True,
+                    )
