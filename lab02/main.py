@@ -14,10 +14,10 @@ task_1 = False
 task_2 = False
 task_3 = False
 task_4 = True
-task_4a = False
+task_4a = True
 task_4b = False
-task_4c = True
-task_4d = True
+task_4c = False
+task_4d = False
 
 T_q = 50    # thresh of maximum average queuing time for pkt A
 
@@ -135,20 +135,29 @@ def printResults(sim_time, mdc, cdc, plots=False):
 
     ##### Results about point 4
     if task_4:
+        if task_4a:
+            #mdc.data.plotLossesMovingAvg()
+            #cdc.data.plotLossesMovingAvg()
+            mdc.data.plotLossesInTime(img_name="lab02/images/mdc_lossTime.png")
+            cdc.data.plotLossesInTime(img_name="lab02/images/cdc_lossTime.png")
+
+            mdc.data.plotUsrInTime(mean_value=True, img_name="lab02/images/mdc_usrTime.png")
+            cdc.data.plotUsrInTime(mean_value=True, img_name="lab02/images/cdc_usrTime.png")
         if task_4b:
             print(
                 f"\nWHOLE SYSTEM\n",
                 f"Queuing delay: {cdc.data.delay + mdc.data.delay}\n",
                 "Packet drop probability:",
                 f"{(cdc.data.countLosses + mdc.data.countLosses)/(cdc.data.arr + mdc.data.arr)}\n",
+                f"Overall operational cost: {cdc.data.tot_serv_costs + mdc.data.tot_serv_costs}\n"
                 "\nCLOUD DATA CENTER\n",
                 f"Queuing delay: {cdc.data.delay}\n",
                 f"Packet drop probability: {cdc.data.countLosses/cdc.data.arr}\n",
-                f"Edge nodes total costs: {cdc.data.tot_serv_costs}\n",
+                f"Cloud servers total costs: {cdc.data.tot_serv_costs}\n",
                 "\nMICRO DATA CENTER\n",
                 f"Queuing delay: {mdc.data.delay}\n",
-                f"Packet drop probability: {mdc.data.countLosses/mdc.data.arr}\n2",
-                f"Cloud servers total costs: {cdc.data.tot_serv_costs}",
+                f"Packet drop probability: {mdc.data.countLosses/mdc.data.arr}\n",
+                f"Edge nodes total costs: {mdc.data.tot_serv_costs}",
             )
         # 4.c - Total cost
         if task_4c or task_4d:
@@ -160,35 +169,35 @@ def printResults(sim_time, mdc, cdc, plots=False):
             print(f"  - Total cost, MDC: {mdc.data.tot_serv_costs}")
             print(f"  - Total cost, CDC: {cdc.data.tot_serv_costs}")
 
-        # 4.c - maximum queuing delay, packets A
-        total_queuing_delays_A = {}
-        for id in mdc.data.delay_pkt_A.keys():
-            if id in cdc.data.delay_pkt_A:
-                total_queuing_delays_A[id] = (
-                    mdc.data.delay_pkt_A[id] + cdc.data.delay_pkt_A[id]
-                )
-            else:
-                total_queuing_delays_A[id] = mdc.data.delay_pkt_A[id]
+            # 4.c - maximum queuing delay, packets A
+            total_queuing_delays_A = {}
+            for id in mdc.data.delay_pkt_A.keys():
+                if id in cdc.data.delay_pkt_A:
+                    total_queuing_delays_A[id] = (
+                        mdc.data.delay_pkt_A[id] + cdc.data.delay_pkt_A[id]
+                    )
+                else:
+                    total_queuing_delays_A[id] = mdc.data.delay_pkt_A[id]
 
-        max_queuing_delay_A = max(total_queuing_delays_A.values())
+            max_queuing_delay_A = max(total_queuing_delays_A.values())
 
-        print(f"Maximum queuing delay, packets A: {max_queuing_delay_A}")
-        print(f"Loss probability, packets A: {(cdc.data.countLosses_A +mdc.data.countLosses_A)/(cdc.data.arr + mdc.data.arr) }")
-       
-
-        total_queuing_delays_B = {}
-        for id in mdc.data.delay_pkt_B.keys():
-            if id in cdc.data.delay_pkt_B:
-                total_queuing_delays_B[id] = (
-                    mdc.data.delay_pkt_B[id] + cdc.data.delay_pkt_B[id]
-                )
-            else:
-                total_queuing_delays_B[id] = mdc.data.delay_pkt_B[id]
-
-        max_queuing_delay_B = max(total_queuing_delays_B.values())
+            print(f"Maximum queuing delay, packets A: {max_queuing_delay_A}")
+            print(f"Loss probability, packets A: {(cdc.data.countLosses_A +mdc.data.countLosses_A)/(cdc.data.arr + mdc.data.arr) }")
         
-        print(f"Maximum queuing delay, packets B: {max_queuing_delay_B}")
-        print(f"Loss probability, packets B: {(cdc.data.countLosses_B +mdc.data.countLosses_B)/(cdc.data.arr + mdc.data.arr) }")
+
+            total_queuing_delays_B = {}
+            for id in mdc.data.delay_pkt_B.keys():
+                if id in cdc.data.delay_pkt_B:
+                    total_queuing_delays_B[id] = (
+                        mdc.data.delay_pkt_B[id] + cdc.data.delay_pkt_B[id]
+                    )
+                else:
+                    total_queuing_delays_B[id] = mdc.data.delay_pkt_B[id]
+
+            max_queuing_delay_B = max(total_queuing_delays_B.values())
+            
+            print(f"Maximum queuing delay, packets B: {max_queuing_delay_B}")
+            print(f"Loss probability, packets B: {(cdc.data.countLosses_B +mdc.data.countLosses_B)/(cdc.data.arr + mdc.data.arr) }")
 
 
 
@@ -498,7 +507,7 @@ if __name__ == "__main__":
 
     ################ Task 3. Analysis on packets A average time in the system
     # Threshold T_q to set desired max average time
-    T_q = 50
+    
     if task_3 and T_q is not None:
         print("+------------------ Task 3 ------------------+")
         
@@ -525,20 +534,22 @@ if __name__ == "__main__":
                 print(f"\nMinimum service rate is {serv_r}\n")
                 min_found = True
         plt.figure()
-        plt.title("Min serv_r to reduce delay_A below T_q")
-        plt.ylabel("delay_A")
+        plt.title(f"Min serv_r to reduce delay_A below T_q={T_q}")
+        plt.grid()
+        plt.ylabel("Max delay_A")
         plt.xlabel("serv_rate")
         plt.axhline(T_q, linestyle="--")
         plt.plot(list(serv_r_list), delay_list)
+        plt.savefig("lab02/images/serv_r_T_q.png", dpi=300)
 
         # b) Find min no. of edge nodes to reduce delay A below T_q
         print("+------------------ Task b ------------------+")
-        n_serv_list = range(1, 30)
+        n_serv_list = range(1, 15)
         min_found = False
         delay_list = []
         for n_serv in n_serv_list:
             res_mdc, res_cdc = run(
-                sim_time, fract, n_serv_1=n_serv, serv_t_1=7.0, results=True
+                sim_time, fract, n_serv_1=n_serv, serv_t_1=8.0,results=True
             )
             total_queuing_delays_A = {}
             for id in res_mdc.delay_pkt_A.keys():
@@ -558,11 +569,14 @@ if __name__ == "__main__":
                 min_found = True
 
         plt.figure()
-        plt.title("Min n_serv to reduce delay_A below T_q")
+        plt.title(f"Min n_serv to reduce delay_A below T_q={T_q}")
+        plt.grid()
         plt.xlabel("no. of servers")
-        plt.ylabel("delay_A")
+        plt.ylabel("Max delay_A")
         plt.axhline(T_q, linestyle="--")
         plt.plot(list(n_serv_list), delay_list)
+        plt.savefig("lab02/images/n_serv_T_q.png", dpi=300)
+
         plt.show()
 
     ########### Task 4. Analysis of the system with multi-server and opertational costs
@@ -572,16 +586,19 @@ if __name__ == "__main__":
 
         # a) Vary packet arrival rate over time and analyze system performance
         if task_4a:
-            arr_t_list = [2, 6, 13, 1]
-            run(
+            arr_t_list = [8, 3, 2, 12]
+            res_mdc, res_cdc =run(
                 sim_time,
                 fract,
                 arr_t=arr_t_list,
+                serv_t_1=4.0,
                 n_serv_1=4,
                 n_serv_2=4,
                 results=True,
                 plots=True,
             )
+
+
         # b)
         if task_4b:
             res_mdc, res_cdc = run(
@@ -591,7 +608,7 @@ if __name__ == "__main__":
                 n_serv_1=4,
                 n_serv_2=4,
                 serv_t_2=[2, 6, 6, 10],
-                server_costs=False,
+                server_costs=True,
                 results=True,
                 plots=False,
             )
@@ -612,7 +629,7 @@ if __name__ == "__main__":
             max_oper_cost = 25000  # To be reviewed
             n_serv_2 = 4
             # different server types compinations
-            serv_t_list = [[10, 10, 10, 10], [1, 1, 1, 1], [5, 5, 5, 5], [1, 1, 10, 10]]
+            serv_t_list = [[7, 7, 4, 4], [1, 1, 10, 10]]
             print("\n+--------- Task 4c ----------+")
             print(f"\nMaximum cost threshold: {max_oper_cost}")
             print(f"Queuing delay threshold: {T_q}")
@@ -643,7 +660,7 @@ if __name__ == "__main__":
                     packet drop probability
                 """
                 n_serv_2 = int(n_serv_2 / 2)
-                serv_t_list = [[1, 10], [10, 10], [1, 1]]
+                serv_t_list = [[3, 3.97], [10, 10], [1, 1]]
                 print("\n\n+--------- Task 4d ----------+")
                 for serv_t_2 in serv_t_list:
                     print("\nServer arrival time configuration:", serv_t_2)

@@ -144,7 +144,7 @@ class Queue:
                     cli = self.queue[0]
                     self.data.waitingDelaysList.append(time - cli.arrival_time)
                     self.data.waiting_delays_times.append(time)
-
+                    self.data.countLosses_t.append((self.data.countLosses, time))
             else:
                 # Lost client
                 if pkt_type == "A":
@@ -153,6 +153,7 @@ class Queue:
                     self.data.countLosses_B += 1
 
                 self.data.countLosses += 1
+                self.data.countLosses_t.append((self.data.countLosses, time))
 
                 if DEBUG:
                     print("> Loss at cloud!")
