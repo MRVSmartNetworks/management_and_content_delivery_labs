@@ -322,33 +322,29 @@ if __name__ == "__main__":
         metric_cf_mean = []
         
         data_list = []
-
+        confidence_int = True
         for arr_t in arr_t_list:
             
             MM_system, data, time = run(arr_t=arr_t, serv_t=serv_t, n_server=n_server, queue_len=queue_len)
             data_list.append(data)
+            if confidence_int:
             # loop to evalaute confidence interval
-            data_conf_int = []
-            for i in range(n_iter):
-                MM_system, data, time = run(arr_t=arr_t, serv_t=serv_t, n_server=n_server, queue_len=queue_len, seed=None)
-                data_conf_int.append(data)
+                data_conf_int = []
+                for i in range(n_iter):
+                    MM_system, data, time = run(arr_t=arr_t, serv_t=serv_t, n_server=n_server, queue_len=queue_len, seed=None)
+                    data_conf_int.append(data)
 
-            metric_cf = [data.countLosses/data.arr for data in data_conf_int]
-            metric_cf_mean.append(np.mean(metric_cf))
-            intervals.append(t.interval(conf_level, n_iter-1, np.mean(metric_cf), np.std(metric_cf)/np.sqrt(n_iter)))
+                metric_cf = [data.delay/data.dep for data in data_conf_int]
+                metric_cf_mean.append(np.mean(metric_cf))
+                intervals.append(t.interval(conf_level, n_iter-1, np.mean(metric_cf), np.std(metric_cf)/np.sqrt(n_iter)))
             
         # metrics plots on different arrival rates
         plotArrivalRate(arr_t_list, data_list, [queue_len, n_server, serv_t])
 
+        if confidence_int:
         # confidence interval for no. of losses
-        plt.figure()
-        plt.title(f"Confidence intervals for loss prob - df={n_iter-1} - conf_level={conf_level}")
-        plt.plot([1./x for x in arr_t_list], metric_cf_mean)
-        plt.fill_between([1./x for x in arr_t_list], list(zip(*intervals))[0], list(zip(*intervals))[1], color='r', alpha=.2)
-        plt.xlabel("Arrival rate")
-        plt.ylabel("Loss prob")
-        plt.grid()
-        plt.show()
+            metric = "avg_delay"
+            plotConfInter(metric, n_iter,conf_level, intervals, metric_cf_mean, arr_t_list)
 
     if multi_vs_single:
         # system parameters
