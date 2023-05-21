@@ -76,7 +76,7 @@ class Queue:
         self.fract = fract
 
         # transimssion delay between MicroDataCenter and CloudDataCenter
-        self.propagation_time = 0.0
+        self.propagation_time = 0.2
 
         # Flag addressing the transient period
         self.in_transient = in_transient

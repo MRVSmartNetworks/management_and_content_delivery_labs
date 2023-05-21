@@ -11,7 +11,7 @@ DEBUG = False
 
 basicRun = False
 task_1 = False
-task_2 = False
+task_2 = True
 task_3 = False
 task_4 = True
 task_4a = True
@@ -19,7 +19,7 @@ task_4b = False
 task_4c = False
 task_4d = False
 
-T_q = 50    # thresh of maximum average queuing time for pkt A
+T_q = 50  # thresh of maximum average queuing time for pkt A
 
 """
 Version:
@@ -82,44 +82,70 @@ def printResults(sim_time, mdc, cdc, plots=False):
         ## Plot moving average of the waiting delay (CDC only)
         cdc.data.avgWaitDelayInTime(img_name="images/task1_average_wait_cdc.png")
 
-        # Plotted values:
         avg_wait_del_time = [
-            sum(cdc.data.waitingDelaysList[:i]) / i
-            for i in range(1, len(cdc.data.waitingDelaysList) + 1)
+            sum(cdc.data.waitingDelaysList[:i]) / (i)
+            for i in range(1, len(cdc.data.waitingDelaysList))
         ]
 
         ### Removing warm-up transient
         # Evaluate mean of waiting delay and then find point in which relative variation becomes low
         avg_wait_del = np.mean(cdc.data.waitingDelaysList)
 
+        avg_time_avg_wait_del = np.mean(avg_wait_del_time)
+
+        # Evaluate the mean having removed the first 'k' samples
+        avg_wait_rem_samples = [
+            sum(avg_wait_del_time[i:]) / (len(avg_wait_del_time) - i)
+            for i in range(1, len(avg_wait_del_time))
+        ]
+
         relative_distance = (avg_wait_del_time - avg_wait_del) / avg_wait_del
 
-        # Extract the index at which the relative distance is below the specified value
-        time_instant = min(np.argwhere(abs(relative_distance) < 0.2))[0]
+        relative_variation = avg_wait_rem_samples - avg_time_avg_wait_del
 
-        if plots:
-            plt.figure(figsize=(8, 4))
-            plt.plot(relative_distance, "b", label="Relative variation")
-            plt.plot(
-                np.gradient(relative_distance),
-                "g",
-                label="Relative variation derivative",
-            )
-            plt.axvline(
-                time_instant, linewidth=0.5, color="r", label="End of initial transient"
-            )
-            plt.title("Relative variation, average waiting delay")
-            plt.grid()
-            plt.xlabel("n")
-            plt.ylabel("R")
-            plt.legend()
-            plt.tight_layout()
-            plt.savefig("images/task1_transient_location.png")
-            plt.show()
+        # Extract the index at which the relative distance is below the specified value (and never gets above again)
+        precision_ss = 0.1
+        indices_invalid = np.argwhere(abs(relative_distance) >= precision_ss)
+
+        time_instant = max(indices_invalid)[0] + 1
 
         # The value present in 'time_instant' is the index to be used to find the actual
         # value of the time instant with the list 'waiting_delays_times'
         end_of_transient_time = cdc.data.waiting_delays_times[time_instant]
+
+        if plots:
+            plt.figure(figsize=(10, 5))
+            plt.plot(
+                cdc.data.waiting_delays_times[1:],
+                relative_distance,
+                "b",
+                label="Relative variation",
+            )
+            # plt.hlines(
+            #     avg_time_avg_wait_del,
+            #     0,
+            #     len(relative_variation),
+            #     label="Mean value over whole simulation",
+            # )
+            plt.axvline(
+                end_of_transient_time,
+                linewidth=0.5,
+                color="r",
+                label="End of initial transient",
+            )
+            plt.title(
+                f"Relative variation, average waiting delay - transient at {precision_ss * 100}%"
+            )
+            plt.grid()
+            plt.xlabel("time")
+            plt.ylabel("R")
+            plt.legend()
+            plt.tight_layout()
+            plt.savefig("images/task1_transient_location.png", dpi=300)
+            plt.show()
+
+            cdc.data.plotUsrInTime()
+            cdc.data.plotUsrMovingAvg()
 
         print(f"The initial transient ends at time t = {end_of_transient_time}")
 
@@ -181,25 +207,26 @@ def printResults(sim_time, mdc, cdc, plots=False):
 
             max_queuing_delay_A = max(total_queuing_delays_A.values())
 
-            print(f"Maximum queuing delay, packets A: {max_queuing_delay_A}")
-            print(f"Loss probability, packets A: {(cdc.data.countLosses_A +mdc.data.countLosses_A)/(cdc.data.arr + mdc.data.arr) }")
-        
+        print(f"Maximum queuing delay, packets A: {max_queuing_delay_A}")
+        print(
+            f"Loss probability, packets A: {(cdc.data.countLosses_A +mdc.data.countLosses_A)/(cdc.data.arr + mdc.data.arr) }"
+        )
 
-            total_queuing_delays_B = {}
-            for id in mdc.data.delay_pkt_B.keys():
-                if id in cdc.data.delay_pkt_B:
-                    total_queuing_delays_B[id] = (
-                        mdc.data.delay_pkt_B[id] + cdc.data.delay_pkt_B[id]
-                    )
-                else:
-                    total_queuing_delays_B[id] = mdc.data.delay_pkt_B[id]
+        total_queuing_delays_B = {}
+        for id in mdc.data.delay_pkt_B.keys():
+            if id in cdc.data.delay_pkt_B:
+                total_queuing_delays_B[id] = (
+                    mdc.data.delay_pkt_B[id] + cdc.data.delay_pkt_B[id]
+                )
+            else:
+                total_queuing_delays_B[id] = mdc.data.delay_pkt_B[id]
 
-            max_queuing_delay_B = max(total_queuing_delays_B.values())
-            
-            print(f"Maximum queuing delay, packets B: {max_queuing_delay_B}")
-            print(f"Loss probability, packets B: {(cdc.data.countLosses_B +mdc.data.countLosses_B)/(cdc.data.arr + mdc.data.arr) }")
+        max_queuing_delay_B = max(total_queuing_delays_B.values())
 
-
+        print(f"Maximum queuing delay, packets B: {max_queuing_delay_B}")
+        print(
+            f"Loss probability, packets B: {(cdc.data.countLosses_B +mdc.data.countLosses_B)/(cdc.data.arr + mdc.data.arr) }"
+        )
 
     return mdc.data, cdc.data
 
@@ -322,7 +349,7 @@ def run(
 
 if __name__ == "__main__":
     random.seed(1)
-    sim_time = 50000
+    sim_time = 100000
     initial_transient_upper_bound = 2000
     fract = 0.5
 
@@ -347,8 +374,8 @@ if __name__ == "__main__":
         run(
             sim_time,
             fract=fract,
-            arr_t=3.0,
-            serv_t_1=3.2,
+            arr_t=2.0,
+            serv_t_1=3,
             q1_len=10,
             serv_t_2=6.0,
             q2_len=20,
@@ -372,9 +399,10 @@ if __name__ == "__main__":
         tmp_res_c = []
 
         ################# a. Changing the queue length, MDC
+        print("2a --------------------")
         for i in range(len(q_lengths)):
             DEBUG = True
-            random.seed(seeds[0])
+            random.seed(seeds[i])
             tmp_res_a.append(
                 run(
                     sim_time,
@@ -382,6 +410,7 @@ if __name__ == "__main__":
                     serv_t_1=10.0,
                     q1_len=q_lengths[i],
                     serv_t_2=15.0,
+                    q2_len=20,
                     results=True,
                 )
             )
@@ -402,6 +431,7 @@ if __name__ == "__main__":
         plt.xlabel("Queue 1 length")
         plt.ylabel("Avg. users")
         plt.tight_layout()
+        plt.savefig("./images/task2_avg_n_q1_len.png")
         plt.show()
 
         # Losses
@@ -418,8 +448,9 @@ if __name__ == "__main__":
         """
 
         ################# b. Changing the queue length, CDC
+        print("2b --------------------")
         for i in range(len(q_lengths)):
-            DEBUG = False
+            DEBUG = True
             random.seed(seeds[i])
             tmp_res_b.append(
                 run(
@@ -449,18 +480,20 @@ if __name__ == "__main__":
         plt.xlabel("Queue 1 length")
         plt.ylabel("Avg. users")
         plt.tight_layout()
+        plt.savefig("./images/task2_avg_n_q2_len.png")
         plt.show()
 
         ################# c. Changing value of f (fraction of packets of type B)
+        print("2c --------------------")
         for i in range(len(f_values)):
             DEBUG = False
-            random.seed(seeds[0])
+            random.seed(seeds[i])
             tmp_res_c.append(
                 run(
                     sim_time,
-                    arr_t=2.5,
+                    serv_t_1=10.0,
                     q1_len=10,
-                    serv_t_2=4.5,
+                    serv_t_2=15.0,
                     fract=f_values[i],
                     results=True,
                 )
@@ -470,30 +503,27 @@ if __name__ == "__main__":
         drop_probs_mdc = [x[0].countLosses / x[0].arr for x in tmp_res_c]
         drop_probs_cdc = [x[1].countLosses / x[1].arr for x in tmp_res_c]
 
-        print(drop_probs_cdc)
-
         plt.figure(figsize=(8, 4))
         bar_width = 0.4
         x_pos = np.arange(len(f_values))
-        plt.bar(x_pos, drop_probs_cdc, width=bar_width, color="b")
-        plt.xticks(x_pos, f_values)
-        plt.xlabel("Values of f")
-        plt.ylabel("Drop probability at cloud")
-        plt.title("Packet type ratio impact on the drop probability")
-        plt.tight_layout()
-        plt.savefig("./images/task2_loss_prob_cdc.png")
-        # plt.show()
-
-        plt.figure(figsize=(8, 4))
-        bar_width = 0.4
-        x_pos = np.arange(len(f_values))
-        plt.bar(x_pos, drop_probs_mdc, width=bar_width, color="r")
+        plt.bar(x_pos, drop_probs_mdc, width=bar_width, color="b")
         plt.xticks(x_pos, f_values)
         plt.xlabel("Values of f")
         plt.ylabel("Drop probability at micro")
-        plt.title("Packet type ratio impact on the drop probability")
+        plt.title("Packet type ratio impact on the drop probability (MDC)")
         plt.tight_layout()
         plt.savefig("./images/task2_loss_prob_mdc.png")
+
+        plt.figure(figsize=(8, 4))
+        bar_width = 0.4
+        x_pos = np.arange(len(f_values))
+        plt.bar(x_pos, drop_probs_cdc, width=bar_width, color="r")
+        plt.xticks(x_pos, f_values)
+        plt.xlabel("Values of f")
+        plt.ylabel("Drop probability at cloud")
+        plt.title("Packet type ratio impact on the drop probability (CDC)")
+        plt.tight_layout()
+        plt.savefig("./images/task2_loss_prob_cdc.png")
         plt.show()
 
         """
@@ -510,7 +540,7 @@ if __name__ == "__main__":
     
     if task_3 and T_q is not None:
         print("+------------------ Task 3 ------------------+")
-        
+
         # a) Find min serv rate to reduce delay A below T_q
         print("+------------------ Task a ------------------+")
         serv_r_list = np.arange(0.1, 0.8, 0.1)

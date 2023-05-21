@@ -334,7 +334,7 @@ class Measure:
             plt.savefig(img_name, dpi=300)
         plt.show()
 
-    def avgWaitDelayInTime(self, figsize=(12, 5), img_name=None):
+    def avgWaitDelayInTime(self, figsize=(10, 5), img_name=None):
         """
         avgWaitDelayInTime
         ---
@@ -347,13 +347,14 @@ class Measure:
         """
         plt.figure(figsize=figsize)
         plt.plot(
+            self.waiting_delays_times[1:],
             [
                 sum(self.waitingDelaysList[:i]) / (i)
                 for i in range(1, len(self.waitingDelaysList))
-            ]
+            ],
         )
         plt.title("Average of the waiting delay in time")
-        plt.xlabel("index")
+        plt.xlabel("time")
         plt.ylabel("Average waiting delay")
         plt.grid()
         plt.tight_layout()
