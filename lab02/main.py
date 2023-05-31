@@ -11,7 +11,7 @@ DEBUG = False
 
 basicRun = False
 task_1 = False
-task_2 = True
+task_2 = False
 task_3 = False
 task_4 = True
 task_4a = True
@@ -349,7 +349,7 @@ def run(
 
 if __name__ == "__main__":
     random.seed(1)
-    sim_time = 100000
+    sim_time = 500000
     initial_transient_upper_bound = 2000
     fract = 0.5
 
