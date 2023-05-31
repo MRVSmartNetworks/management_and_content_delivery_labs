@@ -174,7 +174,7 @@ class MicroDataCenter(Queue):
                     cli = self.queue[0]
                     self.data.waitingDelaysList.append(time - cli.arrival_time)
                     self.data.waiting_delays_times.append(time)
-
+                    self.data.countLosses_t.append((self.data.countLosses, time))
             else:
                 # Full self.queue - send the client directly to the cloud
 
@@ -185,6 +185,7 @@ class MicroDataCenter(Queue):
                     self.data.countLosses_B += 1
 
                 self.data.countLosses += 1
+                self.data.countLosses_t.append((self.data.countLosses, time))
 
                 if DEBUG:
                     print("loss at micro - forward packet to cloud directly")

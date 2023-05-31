@@ -29,6 +29,7 @@ class Measure:
         self.delay_B = 0  # Average time spent by packet B in system
 
         self.countLosses = countLoss  # Number of losses (DROPPED PACKETS)
+        self.countLosses_t = [(0,0)]    #Number of losses in time; tuple (no. losses, current time)
         self.countLosses_A = countLoss
         self.countLosses_B = countLoss
 
@@ -359,4 +360,33 @@ class Measure:
         plt.tight_layout()
         if img_name is not None:
             plt.savefig(img_name, dpi=300)
+        plt.show()
+
+    def plotLossesInTime(self, mean_value=False, img_name=None):
+        """
+        Plot the number of losses in time.
+
+        Parameters:
+        - img_name: if provided, save the plot in the specified location
+        """
+        plt.figure(figsize=(12, 5))
+        plt.plot([t[1] for t in self.countLosses_t], [t[0] for t in self.countLosses_t])
+        if mean_value:
+            plt.hlines(
+                np.mean([t[0] for t in self.countLosses_t]),
+                0,
+                self.countLosses_t[-1][1],
+                "r",
+                linestyles="dashed",
+            )
+            plt.title("Number of losses in time (with mean value)")
+        else:
+            plt.title("Number of losses in time")
+        plt.xlabel("time")
+        plt.ylabel("# losses")
+        plt.grid()
+        plt.tight_layout()
+        if img_name is not None:
+            plt.savefig(img_name, dpi=300)
+
         plt.show()
