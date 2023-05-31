@@ -10,14 +10,14 @@ import time as tm
 DEBUG = False
 
 basicRun = False
-task_1 = False
-task_2 = True
+task_1 = True
+task_2 = False
 task_3 = False
 task_4 = False
 task_4a = False
 task_4b = False
-task_4c = True
-task_4d = True
+task_4c = False
+task_4d = False
 
 T_q = 50  # thresh of maximum average queuing time for pkt A
 
